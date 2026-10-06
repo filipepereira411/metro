@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Simulador de Elevador</title>
+    <title>Simulador de Elevador Residencial</title>
     <meta http-equiv="X-UA-Compatible" content="IE=9">
     <hta:application 
-        id="oElevador"
-        applicationname="SimuladorElevador"
+        id="oElevadorResidencial"
+        applicationname="SimuladorElevadorCasa"
         border="thin"
         caption="yes"
         showintaskbar="yes"
@@ -25,8 +25,8 @@
         }
         .container {
             display: flex;
-            width: 580px;
-            height: 420px;
+            width: 700px;
+            height: 480px;
             background-color: #34495e;
             border: 4px solid #1a252f;
             border-radius: 10px;
@@ -43,6 +43,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            height: 93%;
         }
         .visor {
             width: 100%;
@@ -54,15 +56,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
-            font-family: 'Courier New', Courier, monospace;
-            color: #e74c3c;
-            font-weight: bold;
-            text-shadow: 0 0 10px #e74c3c;
-        }
-        .setas {
             font-size: 24px;
-            margin-left: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            color: #2ecc71;
+            font-weight: bold;
+            text-shadow: 0 0 10px #2ecc71;
         }
         .botoes-grid {
             display: grid;
@@ -87,60 +85,121 @@
             transform: translateY(3px);
         }
         .btn-andar.chamado {
-            background-color: #f1c40f;
-            color: #000;
+            background-color: #e67e22;
+            color: #fff;
             box-shadow: 0 4px #d35400;
         }
-        /* Poço e Cabine */
-        .poco {
+
+        /* A ESTRUTURA DA CASA */
+        .cenario {
             flex: 1;
             margin-left: 20px;
-            background-color: #111;
-            border: 3px solid #7f8c8d;
             position: relative;
-            border-radius: 5px;
+            background-color: #a5d6a7; /* Cor do fundo / céu/jardim */
+            border-radius: 8px;
             overflow: hidden;
+            border: 2px solid #27ae60;
         }
-        .linhas-andar {
+        .telhado {
             position: absolute;
-            width: 100%;
-            border-bottom: 1px dashed #444;
-            color: #555;
-            font-size: 11px;
-            padding-left: 5px;
+            top: 10px;
+            left: 50px;
+            width: 0;
+            height: 0;
+            border-left: 175px solid transparent;
+            border-right: 175px solid transparent;
+            border-bottom: 50px solid #c0392b;
+            z-index: 5;
+        }
+        .casa {
+            position: absolute;
+            top: 60px;
+            left: 65px;
+            width: 320px;
+            height: 400px;
+            background-color: #f1c40f; /* Paredes exteriores da casa */
+            border: 4px solid #d35400;
+            border-bottom: none;
             box-sizing: border-box;
         }
-        .cabine {
-            width: 80px;
-            height: 60px;
-            background-color: #7f8c8d;
-            border: 2px solid #95a5a6;
+        
+        /* Divisões e Andares da Casa */
+        .divisao-andar {
             position: absolute;
-            left: 50px;
-            bottom: 0px;
-            transition: bottom 1s ease-in-out;
+            width: 100%;
+            height: 99px;
+            border-bottom: 3px solid #d35400;
+            box-sizing: border-box;
+            padding-left: 15px;
+            padding-top: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #d35400;
+            font-family: Arial, sans-serif;
+        }
+        
+        /* O Poço do Elevador (Janelas de Vidro Alinhadas) */
+        .coluna-elevador {
+            position: absolute;
+            right: 30px;
+            top: 0px;
+            width: 90px;
+            height: 100%;
+            background-color: #34495e;
+            border-left: 3px solid #d35400;
+            border-right: 3px solid #d35400;
+            box-sizing: border-box;
+        }
+
+        /* Janelas por onde se vê o elevador passar */
+        .janela-elevador {
+            position: absolute;
+            width: 70px;
+            height: 75px;
+            background-color: rgba(52, 152, 219, 0.4);
+            border: 3px solid #fff;
+            left: 7px;
+            box-sizing: border-box;
+        }
+
+        /* A Cabine Móvel do Elevador */
+        .cabine {
+            width: 64px;
+            height: 65px;
+            background-color: #bdc3c7;
+            border: 2px solid #7f8c8d;
+            position: absolute;
+            left: 10px;
+            bottom: 15px;
+            transition: bottom 1.2s ease-in-out;
             display: flex;
+            z-index: 10;
         }
         .porta {
             width: 50%;
             height: 100%;
-            background-color: #34495e;
-            border: 1px solid #2c3e50;
+            background-color: #7f8c8d;
+            border: 1px solid #95a5a6;
             transition: width 0.5s ease-in-out;
+        }
+        .interior-cabine {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: #f39c12;
+            z-index: -1;
         }
     </style>
     <script>
-        // Configuração da Janela HTA
-        window.resizeTo(640, 510);
+        window.resizeTo(760, 570);
 
         var andarAtual = 0;
         var andarDestino = 0;
         var emMovimento = false;
         var filaAndares = [];
         
-        // Mapeamento da altura de cada andar (em pixéis de base)
-        // 0º Andar = 0px, 1º = 80px, 2º = 160px, etc.
-        var alturaAndar = 80;
+        // Cada andar na casa tem exatamente 99px de altura calculada
+        var alturaAndar = 99; 
 
         function carregar() {
             atualizarVisor(andarAtual, "");
@@ -175,57 +234,55 @@
 
         function moverElevador() {
             if (andarAtual < andarDestino) {
-                atualizarVisor(andarAtual, "▲");
+                atualizarVisor(andarAtual, "A SUBIR");
                 andarAtual++;
                 executarMovimento();
             } else if (andarAtual > andarDestino) {
-                atualizarVisor(andarAtual, "▼");
+                atualizarVisor(andarAtual, "A DESCER");
                 andarAtual--;
                 executarMovimento();
             } else {
-                // Chegou ao andar pretendido
                 document.getElementById("btn" + andarAtual).className = "btn-andar";
-                atualizarVisor(andarAtual, "■");
+                atualizarVisor(andarAtual, "CHEGOU");
                 abrirPortas();
             }
         }
 
-        function executarMovimento() {
+        function ejecutarMovimento() {
             var cabine = document.getElementById("cabine");
-            cabine.style.bottom = (andarAtual * alturaAndar) + "px";
+            // Cálculo exato para centrar a cabine nas janelas da casa
+            cabine.style.bottom = (andarAtual * alturaAndar + 15) + "px";
             
-            // Intervalo de 1,2 segundos por andar para simular a viagem
-            setTimeout(moverElevador, 1200);
+            setTimeout(moverElevador, 1500);
         }
 
         function abrirPortas() {
             document.getElementById("pEsq").style.width = "0%";
             document.getElementById("pDir").style.width = "0%";
-            
-            // Mantém as portas abertas por 2 segundos e depois fecha
-            setTimeout(fecharPortas, 2000);
+            setTimeout(fecharPortas, 2500);
         }
 
         function fecharPortas() {
             document.getElementById("pEsq").style.width = "50%";
             document.getElementById("pDir").style.width = "50%";
-            
-            // Espera as portas fecharem totalmente para seguir viagem ou parar
             setTimeout(processarFila, 600);
         }
 
-        function atualizarVisor(andar, seta) {
-            var texto = "Andar " + andar + " " + seta;
-            document.getElementById("txtVisor").innerHTML = texto;
+        function atualizarVisor(andar, estado) {
+            var nomeAndar = "";
+            switch(andar) {
+                case 0: nomeAndar = "PISO 0"; break;
+                case 1: nomeAndar = "PISO 1"; break;
+                case 2: nomeAndar = "PISO 2"; break;
+                case 3: nomeAndar = "PISO 3"; break;
+            }
+            document.getElementById("txtVisor").innerHTML = nomeAndar + "<br><span style='font-size:14px;color:#e74c3c;'>" + estado + "</span>";
         }
 
-        // Extensão auxiliar para verificar duplicados na fila antiga do IE
         Array.prototype.contains = function(obj) {
             var i = this.length;
             while (i--) {
-                if (this[i] === obj) {
-                    return true;
-                }
+                if (this[i] === obj) { return true; }
             }
             return false;
         }
@@ -234,34 +291,24 @@
 <body onload="carregar()">
 
     <div class="container">
-        <!-- Painel de Botões e Visor -->
+        <!-- Painel de Operação -->
         <div class="painel">
-            <div class="visor" id="txtVisor">Andar 0</div>
+            <div class="visor" id="txtVisor">PISO 0</div>
             <div class="botoes-grid">
-                <button id="btn4" class="btn-andar" onclick="chamarAndar(4)">4</button>
                 <button id="btn3" class="btn-andar" onclick="chamarAndar(3)">3</button>
                 <button id="btn2" class="btn-andar" onclick="chamarAndar(2)">2</button>
                 <button id="btn1" class="btn-andar" onclick="chamarAndar(1)">1</button>
-                <button id="btn0" class="btn-andar" onclick="chamarAndar(0)" style="grid-column: span 2;">0 (R/C)</button>
+                <button id="btn0" class="btn-andar" onclick="chamarAndar(0)">0</button>
             </div>
+            <p style="font-size: 11px; text-align: center; margin-top: 30px; color: #95a5a6;">Simulador Residencial HTA</p>
         </div>
 
-        <!-- Estrutura Física do Elevador -->
-        <div class="poco">
-            <!-- Linhas de referência dos andares no poço -->
-            <div class="linhas-andar" style="bottom: 320px; height: 80px;">4º Andar</div>
-            <div class="linhas-andar" style="bottom: 240px; height: 80px;">3º Andar</div>
-            <div class="linhas-andar" style="bottom: 160px; height: 80px;">2º Andar</div>
-            <div class="linhas-andar" style="bottom: 80px; height: 80px;">1º Andar</div>
-            <div class="linhas-andar" style="bottom: 0px; height: 80px;">Rés-do-Chão</div>
+        <!-- Cenário Gráfico da Casa -->
+        <div class="cenario">
+            <div class="telhado"></div>
+            
+            <div class="casa">
+                <!-- Divisões Interiores -->
+                <div class="divisao-andar" style="bottom: 297px;">Sótão / Quarto 2</div>
+                <div class="divisao-andar" style="bottom: 198px;">Quarto Principal</div>
 
-            <!-- Caixa física da Cabine -->
-            <div id="cabine" class="cabine">
-                <div id="pEsq" class="porta"></div>
-                <div id="pDir" class="porta"></div>
-            </div>
-        </div>
-    </div>
-
-</body>
-</html>
