@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simulador de Elevador</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=9">
+    <hta:application 
+        id="oElevador"
+        applicationname="SimuladorElevador"
+        border="thin"
+        caption="yes"
+        showintaskbar="yes"
+        singleinstance="yes"
+        sysmenu="yes"
+        windowstate="normal"
+        scroll="no"
+    >
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            margin: 0;
+            padding: 20px;
+            user-select: none;
+        }
+        .container {
+            display: flex;
+            width: 580px;
+            height: 420px;
+            background-color: #34495e;
+            border: 4px solid #1a252f;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0px 10px 20px rgba(0,0,0,0.5);
+        }
+        /* Painel de Controlo */
+        .painel {
+            width: 200px;
+            background-color: #22313f;
+            border: 2px solid #1e272e;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .visor {
+            width: 100%;
+            height: 60px;
+            background-color: #000;
+            border: 2px solid #7f8c8d;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-family: 'Courier New', Courier, monospace;
+            color: #e74c3c;
+            font-weight: bold;
+            text-shadow: 0 0 10px #e74c3c;
+        }
+        .setas {
+            font-size: 24px;
+            margin-left: 10px;
+        }
+        .botoes-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            width: 100%;
+        }
+        .btn-andar {
+            height: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: #bdc3c7;
+            color: #2c3e50;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px #95a5a6;
+            outline: none;
+        }
+        .btn-andar:active {
+            box-shadow: 0 1px #95a5a6;
+            transform: translateY(3px);
+        }
+        .btn-andar.chamado {
+            background-color: #f1c40f;
+            color: #000;
+            box-shadow: 0 4px #d35400;
+        }
+        /* Poço e Cabine */
+        .poco {
+            flex: 1;
+            margin-left: 20px;
+            background-color: #111;
+            border: 3px solid #7f8c8d;
+            position: relative;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .linhas-andar {
+            position: absolute;
+            width: 100%;
+            border-bottom: 1px dashed #444;
+            color: #555;
+            font-size: 11px;
+            padding-left: 5px;
+            box-sizing: border-box;
+        }
+        .cabine {
+            width: 80px;
+            height: 60px;
+            background-color: #7f8c8d;
+            border: 2px solid #95a5a6;
+            position: absolute;
+            left: 50px;
+            bottom: 0px;
+            transition: bottom 1s ease-in-out;
+            display: flex;
+        }
+        .porta {
+            width: 50%;
+            height: 100%;
+            background-color: #34495e;
+            border: 1px solid #2c3e50;
+            transition: width 0.5s ease-in-out;
+        }
+    </style>
+    <script>
+        // Configuração da Janela HTA
+        window.resizeTo(640, 510);
+
+        var andarAtual = 0;
+        var andarDestino = 0;
+        var emMovimento = false;
+        var filaAndares = [];
+        
+        // Mapeamento da altura de cada andar (em pixéis de base)
+        // 0º Andar = 0px, 1º = 80px, 2º = 160px, etc.
+        var alturaAndar = 80;
+
+        function carregar() {
+            atualizarVisor(andarAtual, "");
+        }
+
+        function chamarAndar(andar) {
+            if (andar === andarAtual && !emMovimento) {
+                abrirPortas();
+                return;
+            }
+            
+            if (!filaAndares.contains(andar) && andar !== andarAtual) {
+                filaAndares.push(andar);
+                document.getElementById("btn" + andar).className = "btn-andar chamado";
+                if (!emMovimento) {
+                    processarFila();
+                }
+            }
+        }
+
+        function processarFila() {
+            if (filaAndares.length === 0) {
+                emMovimento = false;
+                atualizarVisor(andarAtual, "");
+                return;
+            }
+
+            emMovimento = true;
+            andarDestino = filaAndares.shift();
+            moverElevador();
+        }
+
+        function moverElevador() {
+            if (andarAtual < andarDestino) {
+                atualizarVisor(andarAtual, "▲");
+                andarAtual++;
+                executarMovimento();
+            } else if (andarAtual > andarDestino) {
+                atualizarVisor(andarAtual, "▼");
+                andarAtual--;
+                executarMovimento();
+            } else {
+                // Chegou ao andar pretendido
+                document.getElementById("btn" + andarAtual).className = "btn-andar";
+                atualizarVisor(andarAtual, "■");
+                abrirPortas();
+            }
+        }
+
+        function executarMovimento() {
+            var cabine = document.getElementById("cabine");
+            cabine.style.bottom = (andarAtual * alturaAndar) + "px";
+            
+            // Intervalo de 1,2 segundos por andar para simular a viagem
+            setTimeout(moverElevador, 1200);
+        }
+
+        function abrirPortas() {
+            document.getElementById("pEsq").style.width = "0%";
+            document.getElementById("pDir").style.width = "0%";
+            
+            // Mantém as portas abertas por 2 segundos e depois fecha
+            setTimeout(fecharPortas, 2000);
+        }
+
+        function fecharPortas() {
+            document.getElementById("pEsq").style.width = "50%";
+            document.getElementById("pDir").style.width = "50%";
+            
+            // Espera as portas fecharem totalmente para seguir viagem ou parar
+            setTimeout(processarFila, 600);
+        }
+
+        function atualizarVisor(andar, seta) {
+            var texto = "Andar " + andar + " " + seta;
+            document.getElementById("txtVisor").innerHTML = texto;
+        }
+
+        // Extensão auxiliar para verificar duplicados na fila antiga do IE
+        Array.prototype.contains = function(obj) {
+            var i = this.length;
+            while (i--) {
+                if (this[i] === obj) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    </script>
+</head>
+<body onload="carregar()">
+
+    <div class="container">
+        <!-- Painel de Botões e Visor -->
+        <div class="painel">
+            <div class="visor" id="txtVisor">Andar 0</div>
+            <div class="botoes-grid">
+                <button id="btn4" class="btn-andar" onclick="chamarAndar(4)">4</button>
+                <button id="btn3" class="btn-andar" onclick="chamarAndar(3)">3</button>
+                <button id="btn2" class="btn-andar" onclick="chamarAndar(2)">2</button>
+                <button id="btn1" class="btn-andar" onclick="chamarAndar(1)">1</button>
+                <button id="btn0" class="btn-andar" onclick="chamarAndar(0)" style="grid-column: span 2;">0 (R/C)</button>
+            </div>
+        </div>
+
+        <!-- Estrutura Física do Elevador -->
+        <div class="poco">
+            <!-- Linhas de referência dos andares no poço -->
+            <div class="linhas-andar" style="bottom: 320px; height: 80px;">4º Andar</div>
+            <div class="linhas-andar" style="bottom: 240px; height: 80px;">3º Andar</div>
+            <div class="linhas-andar" style="bottom: 160px; height: 80px;">2º Andar</div>
+            <div class="linhas-andar" style="bottom: 80px; height: 80px;">1º Andar</div>
+            <div class="linhas-andar" style="bottom: 0px; height: 80px;">Rés-do-Chão</div>
+
+            <!-- Caixa física da Cabine -->
+            <div id="cabine" class="cabine">
+                <div id="pEsq" class="porta"></div>
+                <div id="pDir" class="porta"></div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
