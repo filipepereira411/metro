@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simulador de Elevador Residencial</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=9">
+    <hta:application 
+        id="oElevadorResidencial"
+        applicationname="SimuladorElevadorCasa"
+        border="thin"
+        caption="yes"
+        showintaskbar="yes"
+        singleinstance="yes"
+        sysmenu="yes"
+        windowstate="normal"
+        scroll="no"
+    >
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            margin: 0;
+            padding: 20px;
+            user-select: none;
+        }
+        .container {
+            display: flex;
+            width: 700px;
+            height: 480px;
+            background-color: #34495e;
+            border: 4px solid #1a252f;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0px 10px 20px rgba(0,0,0,0.5);
+        }
+        /* Painel de Controlo */
+        .painel {
+            width: 200px;
+            background-color: #22313f;
+            border: 2px solid #1e272e;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 93%;
+        }
+        .visor {
+            width: 100%;
+            height: 60px;
+            background-color: #000;
+            border: 2px solid #7f8c8d;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-family: 'Courier New', Courier, monospace;
+            color: #2ecc71;
+            font-weight: bold;
+            text-shadow: 0 0 10px #2ecc71;
+        }
+        .botoes-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            width: 100%;
+        }
+        .btn-andar {
+            height: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: #bdc3c7;
+            color: #2c3e50;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px #95a5a6;
+            outline: none;
+        }
+        .btn-andar:active {
+            box-shadow: 0 1px #95a5a6;
+            transform: translateY(3px);
+        }
+        .btn-andar.chamado {
+            background-color: #e67e22;
+            color: #fff;
+            box-shadow: 0 4px #d35400;
+        }
+
+        /* A ESTRUTURA DA CASA */
+        .cenario {
+            flex: 1;
+            margin-left: 20px;
+            position: relative;
+            background-color: #a5d6a7; /* Cor do fundo / céu/jardim */
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #27ae60;
+        }
+        .telhado {
+            position: absolute;
+            top: 10px;
+            left: 50px;
+            width: 0;
+            height: 0;
+            border-left: 175px solid transparent;
+            border-right: 175px solid transparent;
+            border-bottom: 50px solid #c0392b;
+            z-index: 5;
+        }
+        .casa {
+            position: absolute;
+            top: 60px;
+            left: 65px;
+            width: 320px;
+            height: 400px;
+            background-color: #f1c40f; /* Paredes exteriores da casa */
+            border: 4px solid #d35400;
+            border-bottom: none;
+            box-sizing: border-box;
+        }
+        
+        /* Divisões e Andares da Casa */
+        .divisao-andar {
+            position: absolute;
+            width: 100%;
+            height: 99px;
+            border-bottom: 3px solid #d35400;
+            box-sizing: border-box;
+            padding-left: 15px;
+            padding-top: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #d35400;
+            font-family: Arial, sans-serif;
+        }
+        
+        /* O Poço do Elevador (Janelas de Vidro Alinhadas) */
+        .coluna-elevador {
+            position: absolute;
+            right: 30px;
+            top: 0px;
+            width: 90px;
+            height: 100%;
+            background-color: #34495e;
+            border-left: 3px solid #d35400;
+            border-right: 3px soli<!DOCTYPE html>
+<html>
+<head>
+    <title>Simulador de Metro HTA</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=9">
+    <hta:application 
+        id="oMetro"
+        applicationname="SimuladorMetro"
+        border="thin"
+        caption="yes"
+        showintaskbar="yes"
+        singleinstance="yes"
+        sysmenu="yes"
+        windowstate="normal"
+        scroll="no"
+    >
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e272e;
+            color: #ecf0f1;
+            margin: 0;
+            padding: 20px;
+            user-select: none;
+        }
+        .janela-principal {
+            width: 760px;
+            background-color: #2c3e50;
+            border: 4px solid #0f171e;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+        }
+        
+        /* Sistema de Informação e Painel */
+        .painel-superior {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background-color: #1b2631;
+            padding: 15px;
+            border-radius: 6px;
+            border: 2px solid #2c3e50;
+        }
+        .visor-led {
+            width: 420px;
+            height: 50px;
+            background-color: #000;
+            border: 2px solid #7f8c8d;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding-left: 15px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 18px;
+            color: #ff9f43;
+            font-weight: bold;
+            text-shadow: 0 0 8px #ff9f43;
+        }
+        
+        /* Mapa de Rede Estilo Linha de Metro */
+        .mapa-linha {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 40px;
+            background-color: #2f3640;
+            margin-bottom: 25px;
+            padding: 0 40px;
+            box-sizing: border-box;
+            position: relative;
+            border-radius: 4px;
+        }
+        .linha-trilho {
+            position: absolute;
+            height: 6px;
+            background-color: #3498db; /* Linha Azul */
+            left: 50px;
+            right: 50px;
+            top: 17px;
+            z-index: 1;
+        }
+        .estacao-ponto {
+            width: 16px;
+            height: 16px;
+            background-color: #7f8c8d;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            z-index: 2;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .estacao-ponto.ativa {
+            background-color: #2ecc71;
+            box-shadow: 0 0 10px #2ecc71;
+        }
+        .estacao-ponto.destino {
+            background-color: #e74c3c;
+            animation: piscar 0.6s infinite alternate;
+        }
+        .label-estacao {
+            position: absolute;
+            top: 22px;
+            left: -30px;
+            width: 80px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: #dcdde1;
+        }
+        
+        /* Túnel Subterrâneo e Comboio */
+        .tunel {
+            width: 100%;
+            height: 140px;
+            background-color: #111;
+            border: 3px dashed #333;
+            position: relative;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .plataforma-visual {
+            position: absolute;
+            width: 140px;
+            height: 15px;
+            background-color: #7f8c8d;
+            bottom: 0;
+            border-top: 3px solid #f1c40f; /* Linha de segurança amarela */
+            z-index: 3;
+        }
+        .metro-carruagem {
+            width: 180px;
+            height: 75px;
+            background-color: #dcdde1;
+            border: 3px solid #7f8c8d;
+            border-radius: 8px 8px 0 0;
+            position: absolute;
+            bottom: 5px;
+            left: 20px;
+            transition: left 4s cubic-bezier(0.45, 0, 0.55, 1);
+            z-index: 5;
+        }
+        .janela-metro {
+            width: 35px;
+            height: 25px;
+            background-color: #34495e;
+            border: 2px solid #7f8c8d;
+            position: absolute;
+            top: 12px;
+            border-radius: 4px;
+        }
+        .porta-metro {
+            width: 45px;
+            height: 52px;
+            background-color: #7f8c8d;
+            position: absolute;
+            bottom: 0;
+            left: 68px;
+            border: 1px solid #333;
+            display: flex;
+        }
+        .folha-porta {
+            width: 50%;
+            height: 100%;
+            background-color: #b2bec3;
+            border: 1px solid #636e72;
+            transition: width 0.8s ease-in-out;
+        }
+
+        /* Controlos */
+        .botoes-controlo {
+            display: flex;
+            gap: 15px;
+        }
+        .btn-metro {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #34495e;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 3px #2c3e50;
+        }
+        .btn-metro:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px #2c3e50;
+        }
+        .btn-marcha { background-color: #2ecc71; box-shadow: 0 3px #27ae60; }
+        
+        @keyframes piscar {
+            from { opacity: 1; } to { opacity: 0.3; }
+        }
+    </style>
+    <script>
+        window.resizeTo(820, 560);
+
+        var estacaoAtual = 0;
+        var estacaoDestino = 0;
+        var emViagem = false;
+        var portasAbertas = false;
+
+        // Posições em píxeis para alinhar o metro em cada estação no túnel
+        var posicoesEstacoes =; 
+        var nomesEstacoes = ["Oriente", "Alvalade", "Rossio", "Cais Sodré"];
+
+        function selecionarEstacao(index) {
+            if (emViagem || index === estacaoAtual) return;
+            
+            if (portasAbertas) {
+                fecharPortas();
+                setTimeout(function() { prepararViagem(index); }, 1000);
+                return;
+            }
+            prepararViagem(index);
+        }
+
+        function prepararViagem(index) {
+            estacaoDestino = index;
+            
+            // Atualiza o mapa visual
+            for (var i = 0; i < 4; i++) {
+                document.getElementById("ponto" + i).className = "estacao-ponto" + (i === estacaoAtual ? " ativa" : "");
+            }
+            document.getElementById("ponto" + index).className = "estacao-ponto destino";
+            
+            document.getElementById("txtVisor").innerHTML = "Próxima Paragem: " + nomesEstacoes[estacaoDestino];
+            document.getElementById("btnPartida").disabled = false;
+        }
+
+        function iniciarMarcha() {
+            if (emViagem || estacaoAtual === estacaoDestino) return;
+            
+            emViagem = true;
+            document.getElementById("btnPartida").disabled = true;
+            document.getElementById("txtVisor").innerHTML = "Em viagem para " + nomesEstacoes[estacaoDestino] + "... 🚇";
+
+            var carruagem = document.getElementById("comboio");
+            // Define o tempo da animação dinamicamente baseado na distância
+            var distancia = Math.abs(estacaoDestino - estacaoAtual);
+            carruagem.style.transition = "left " + (distancia * 2.5) + "s cubic-bezier(0.45, 0, 0.55, 1)";
+            
+            // Move a carruagem física
+            carruagem.style.left = posicoesEstacoes[estacaoDestino] + "px";
+
+            // Aguarda a conclusão da viagem
+            setTimeout(chegadaEstacao, distancia * 2500);
+        }
+
+        function chegadaEstacao() {
+            estacaoAtual = estacaoDestino;
+            emViagem = false;
+            
+            document.getElementById("ponto" + estacaoAtual).className = "estacao-ponto ativa";
+            document.getElementById("txtVisor").innerHTML = "Estação: " + nomesEstacoes[estacaoAtual] + " - Portas em operação";
+            
+            setTimeout(abrirPortas, 800);
+        }
+
+        function abrirPortas() {
+            if (emViagem || portasAbertas) return;
+            document.getElementById("pEsq").style.width = "0%";
+            document.getElementById("pDir").style.width = "0%";
+            portasAbertas = true;
+        }
+
+        function fecharPortas() {
+            if (emViagem || !portasAbertas) return;
+            document.getElementById("pEsq").style.width = "50%";
+            document.getElementById("pDir").style.width = "50%";
+            portasAbertas = false;
+        }
+    </script>
+</head>
+<body>
+
+    <div class="janela-principal">
+        <h2>Painel de Controlo do Metropolitano</h2>
+        
+        <!-- Estado e Monitorização -->
+        <div class="painel-superior">
+            <div class="visor-led" id="txtVisor">Terminação: Oriente. Portas Abertas.</div>
+            <div class="botoes-controlo">
+                <button class="btn-metro" onclick="abrirPortas()">Abrir Portas</button>
+                <button class="btn-metro" onclick="fecharPortas()">Fechar Portas</button>
+                <button id="btnPartida" class="btn-metro btn-marcha" onclick="iniciarMarcha()" disabled>Iniciar Marcha ▶</button>
+            </div>
+        </div>
+
+        <!-- Indicador da Linha do Metro -->
+        <div class="mapa-linha">
+            <div class="linha-trilho"></div>
+            
+            <div id="ponto0" class="estacao-ponto ativa" onclick="selecionarEstacao(0)">
+                <div class="label-estacao">Oriente</div>
+            </div>
+            <div id="ponto1" class="estacao-ponto" onclick="selecionarEstacao(1)">
+                <div class="label-estacao">Alvalade</div>
+            </div>
+
