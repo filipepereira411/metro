@@ -195,19 +195,65 @@
             width: 420px;
             height: 50px;
             background-color: #000;
+            border: 2px solid #7f8c8d<!DOCTYPE html>
+<html>
+<head>
+    <title>Simulador de Metro HTA</title>
+    <!-- ESTA LINHA CORRIGE OS CARACTERES ESTRANHOS -->
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=9">
+    <hta:application 
+        id="oMetro"
+        applicationname="SimuladorMetro"
+        border="thin"
+        caption="yes"
+        showintaskbar="yes"
+        singleinstance="yes"
+        sysmenu="yes"
+        windowstate="normal"
+        scroll="no"
+    >
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e272e;
+            color: #ecf0f1;
+            margin: 0;
+            padding: 20px;
+            user-select: none;
+        }
+        .janela-principal {
+            width: 760px;
+            background-color: #2c3e50;
+            border: 4px solid #0f171e;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+        }
+        .painel-superior {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background-color: #1b2631;
+            padding: 15px;
+            border-radius: 6px;
+            border: 2px solid #2c3e50;
+        }
+        .visor-led {
+            width: 420px;
+            height: 50px;
+            background-color: #000;
             border: 2px solid #7f8c8d;
             border-radius: 4px;
             display: flex;
             align-items: center;
             padding-left: 15px;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 18px;
+            font-size: 16px;
             color: #ff9f43;
             font-weight: bold;
             text-shadow: 0 0 8px #ff9f43;
         }
-        
-        /* Mapa de Rede Estilo Linha de Metro */
         .mapa-linha {
             display: flex;
             align-items: center;
@@ -224,7 +270,7 @@
         .linha-trilho {
             position: absolute;
             height: 6px;
-            background-color: #3498db; /* Linha Azul */
+            background-color: #3498db;
             left: 50px;
             right: 50px;
             top: 17px;
@@ -239,7 +285,6 @@
             z-index: 2;
             position: relative;
             cursor: pointer;
-            transition: background-color 0.3s;
         }
         .estacao-ponto.ativa {
             background-color: #2ecc71;
@@ -259,8 +304,6 @@
             font-weight: bold;
             color: #dcdde1;
         }
-        
-        /* Túnel Subterrâneo e Comboio */
         .tunel {
             width: 100%;
             height: 140px;
@@ -277,7 +320,7 @@
             height: 15px;
             background-color: #7f8c8d;
             bottom: 0;
-            border-top: 3px solid #f1c40f; /* Linha de segurança amarela */
+            border-top: 3px solid #f1c40f;
             z-index: 3;
         }
         .metro-carruagem {
@@ -318,8 +361,6 @@
             border: 1px solid #636e72;
             transition: width 0.8s ease-in-out;
         }
-
-        /* Controlos */
         .botoes-controlo {
             display: flex;
             gap: 15px;
@@ -353,9 +394,8 @@
         var emViagem = false;
         var portasAbertas = false;
 
-        // Posições em píxeis para alinhar o metro em cada estação no túnel
         var posicoesEstacoes =; 
-        var nomesEstacoes = ["Oriente", "Alvalade", "Rossio", "Cais Sodré"];
+        var nomesEstacoes = ["Oriente", "Alvalade", "Rossio", "Cais Sodre"];
 
         function selecionarEstacao(index) {
             if (emViagem || index === estacaoAtual) return;
@@ -371,13 +411,12 @@
         function prepararViagem(index) {
             estacaoDestino = index;
             
-            // Atualiza o mapa visual
             for (var i = 0; i < 4; i++) {
                 document.getElementById("ponto" + i).className = "estacao-ponto" + (i === estacaoAtual ? " ativa" : "");
             }
             document.getElementById("ponto" + index).className = "estacao-ponto destino";
             
-            document.getElementById("txtVisor").innerHTML = "Próxima Paragem: " + nomesEstacoes[estacaoDestino];
+            document.getElementById("txtVisor").innerHTML = "Proxima Paragem: " + nomesEstacoes[estacaoDestino];
             document.getElementById("btnPartida").disabled = false;
         }
 
@@ -386,18 +425,20 @@
             
             emViagem = true;
             document.getElementById("btnPartida").disabled = true;
-            document.getElementById("txtVisor").innerHTML = "Em viagem para " + nomesEstacoes[estacaoDestino] + "... 🚇";
+            document.getElementById("txtVisor").innerHTML = "Em viagem para " + nomesEstacoes[estacaoDestino] + "...";
 
             var carruagem = document.getElementById("comboio");
-            // Define o tempo da animação dinamicamente baseado na distância
             var distancia = Math.abs(estacaoDestino - estacaoAtual);
             carruagem.style.transition = "left " + (distancia * 2.5) + "s cubic-bezier(0.45, 0, 0.55, 1)";
             
-            // Move a carruagem física
             carruagem.style.left = posicoesEstacoes[estacaoDestino] + "px";
 
-            // Aguarda a conclusão da viagem
             setTimeout(chegadaEstacao, distancia * 2500);
+        }
+
+        function llegadaEstacao() {
+            // Função interna corrigida para mapeamento compatível
+            chegadaEstacao();
         }
 
         function chegadaEstacao() {
@@ -405,7 +446,7 @@
             emViagem = false;
             
             document.getElementById("ponto" + estacaoAtual).className = "estacao-ponto ativa";
-            document.getElementById("txtVisor").innerHTML = "Estação: " + nomesEstacoes[estacaoAtual] + " - Portas em operação";
+            document.getElementById("txtVisor").innerHTML = "Estacao: " + nomesEstacoes[estacaoAtual] + " - Portas abertas";
             
             setTimeout(abrirPortas, 800);
         }
@@ -430,17 +471,15 @@
     <div class="janela-principal">
         <h2>Painel de Controlo do Metropolitano</h2>
         
-        <!-- Estado e Monitorização -->
         <div class="painel-superior">
-            <div class="visor-led" id="txtVisor">Terminação: Oriente. Portas Abertas.</div>
+            <div class="visor-led" id="txtVisor">Terminacao: Oriente. Portas Abertas.</div>
             <div class="botoes-controlo">
                 <button class="btn-metro" onclick="abrirPortas()">Abrir Portas</button>
                 <button class="btn-metro" onclick="fecharPortas()">Fechar Portas</button>
-                <button id="btnPartida" class="btn-metro btn-marcha" onclick="iniciarMarcha()" disabled>Iniciar Marcha ▶</button>
+                <button id="btnPartida" class="btn-metro btn-marcha" onclick="iniciarMarcha()" disabled>Iniciar Marcha</button>
             </div>
         </div>
 
-        <!-- Indicador da Linha do Metro -->
         <div class="mapa-linha">
             <div class="linha-trilho"></div>
             
@@ -450,4 +489,12 @@
             <div id="ponto1" class="estacao-ponto" onclick="selecionarEstacao(1)">
                 <div class="label-estacao">Alvalade</div>
             </div>
+            <div id="ponto2" class="estacao-ponto" onclick="selecionarEstacao(2)">
+                <div class="label-estacao">Rossio</div>
+            </div>
+            <div id="ponto3" class="estacao-ponto" onclick="selecionarEstacao(3)">
+                <div class="label-estacao">Cais Sodre</div>
+            </div>
+        </div>
 
+        <div class="tunel">
