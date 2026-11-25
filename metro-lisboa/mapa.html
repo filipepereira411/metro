@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Mapa interativo da rede do Metropolitano de Lisboa com cálculo de itinerários.">
+  <title>Mapa interativo · Metro de Lisboa</title>
+  <link rel="stylesheet" href="css/estilo.css">
+  <link rel="stylesheet" href="css/mapa.css">
+  <script src="js/rede.js" defer></script>
+  <script src="js/conta.js" defer></script>
+  <script src="js/mapa.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <nav class="navegacao" aria-label="Navegação principal">
+      <a href="index.html">Simulador</a>
+      <a href="mapa.html" class="ativo">Mapa interativo</a>
+      <a href="conta.html" data-sessao="convidado">Entrar / Registar</a>
+      <a href="admin.html" data-sessao="admin">Admin</a>
+      <span class="sessao">
+        <span data-sessao="nome">Convidado</span>
+        <button type="button" class="botao ligado" data-acao="sair" data-sessao="autenticado">Sair</button>
+      </span>
+    </nav>
+
+    <header class="cabecalho">
+      <div class="marca">
+        <span class="marca-simbolo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <div>
+          <h1>Mapa interativo</h1>
+          <p>Clica numa estação para planear uma viagem</p>
+        </div>
+      </div>
+      <div class="horario" id="avisoLinhas">Todas as linhas operacionais</div>
+    </header>
+
+    <main class="mapa-grelha">
+      <section class="cartao mapa-cartao">
+        <div class="cabecalho-secao">
+          <h2>Rede das 4 linhas</h2>
+          <div class="controlos-mapa" role="group" aria-label="Zoom do mapa">
+            <button type="button" data-zoom="in" aria-label="Ampliar">+</button>
+            <button type="button" data-zoom="out" aria-label="Reduzir">−</button>
+            <button type="button" data-zoom="reset">Reset</button>
+          </div>
+        </div>
+        <div class="mapa-envolucao" id="mapaEnvolucao">
+          <svg id="mapa" viewBox="0 0 1200 560" role="img" aria-label="Mapa esquemático das linhas do Metro de Lisboa">
+            <g id="camadaLinhas"></g>
+            <g id="camadaLigacoes"></g>
+            <g id="camadaRota"></g>
+            <g id="camadaEstacoes"></g>
+          </svg>
+        </div>
+        <p class="dica">Clica numa estação para a selecionar · arrasta o mapa para o mover · usa + / − para ampliar.</p>
+      </section>
+
+      <aside class="cartao info-cartao">
+        <h2>Estação selecionada</h2>
+        <p class="valor-grande" id="nomeEstacao">—</p>
+        <div class="linhas-estacao" id="linhasEstacao"></div>
+
+        <div class="botoes">
+          <button type="button" id="definirOrigem" class="botao">Definir origem</button>
+          <button type="button" id="definirDestino" class="botao">Definir destino</button>
+        </div>
+        <div class="selecao" id="selecao"></div>
+
+        <label class="campo"><span>Hora de partida</span><select id="hora"></select></label>
+        <label class="campo"><span>Data</span><input type="date" id="data"></label>
+        <button type="button" id="calcular" class="botao primario">Calcular itinerário →</button>
+        <p class="erro" id="erroMapa" role="alert" hidden></p>
+
+        <div id="resultadoInfo" class="resultado-info"></div>
+        <a id="abrirSimulador" class="botao simulation-link" href="index.html">Ver no simulador →</a>
+      </aside>
+    </main>
+  </div>
+</body>
+</html>

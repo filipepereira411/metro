@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Entrar, registar e terminar sessão no Metropolitano de Lisboa.">
+  <title>Conta · Metro de Lisboa</title>
+  <link rel="stylesheet" href="css/estilo.css">
+  <link rel="stylesheet" href="css/conta.css">
+  <script src="js/rede.js" defer></script>
+  <script src="js/conta.js" defer></script>
+  <script src="js/conta-pagina.js" defer></script>
+</head>
+<body>
+  <div class="app pagina-conta">
+    <nav class="navegacao" aria-label="Navegação principal">
+      <a href="index.html">Simulador</a>
+      <a href="mapa.html">Mapa interativo</a>
+      <a href="conta.html" class="ativo">Conta</a>
+      <a href="admin.html" data-sessao="admin">Admin</a>
+      <span class="sessao">
+        <span data-sessao="nome">Convidado</span>
+        <button type="button" class="botao ligado" data-acao="sair" data-sessao="autenticado">Sair</button>
+      </span>
+    </nav>
+
+    <header class="cabecalho">
+      <div class="marca">
+        <span class="marca-simbolo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <div>
+          <h1>Área de cliente</h1>
+          <p>Entrar, registar e terminar sessão</p>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="cartao sessao-atual" id="sessaoAtual" hidden>
+        <h2>Sessão iniciada</h2>
+        <p>Estás autenticado como <strong data-sessao="nome">—</strong> (<span data-sessao="email"></span>).</p>
+        <div class="botoes">
+          <a class="botao" href="index.html">Ir para o simulador</a>
+          <a class="botao" href="mapa.html">Abrir mapa interativo</a>
+          <a class="botao" href="admin.html" data-sessao="admin">Abrir painel admin</a>
+        </div>
+      </section>
+
+      <div class="cartoes-conta" id="formularios">
+        <section class="cartao">
+          <h2>Entrar</h2>
+          <p class="subtitulo">Utiliza uma conta de cliente ou de administrador.</p>
+          <form id="formEntrar">
+            <label class="campo"><span>E-mail</span><input type="email" id="entrarEmail" required autocomplete="username"></label>
+            <label class="campo"><span>Palavra-passe</span><input type="password" id="entrarSenha" required autocomplete="current-password"></label>
+            <button type="submit" class="botao primario largura-total">Entrar →</button>
+          </form>
+          <p class="mensagem" id="mensagemEntrar" role="alert" hidden></p>
+          <p class="subtitulo" style="margin:14px 0 0">Teste: <code>cliente@metro.pt</code> / <code>cliente123</code> · <code>admin@metro.pt</code> / <code>admin123</code></p>
+        </section>
+
+        <section class="cartao">
+          <h2>Registar</h2>
+          <p class="subtitulo">Cria uma conta de cliente ou de administrador.</p>
+          <form id="formRegistar">
+            <label class="campo"><span>Nome</span><input type="text" id="regNome" required autocomplete="name"></label>
+            <label class="campo"><span>E-mail</span><input type="email" id="regEmail" required autocomplete="email"></label>
+            <label class="campo"><span>Palavra-passe</span><input type="password" id="regSenha" required minlength="6" autocomplete="new-password"></label>
+            <div class="campo">
+              <span>Tipo de conta</span>
+              <div class="tipos">
+                <label><input type="radio" name="tipo" value="cliente" checked> Cliente</label>
+                <label><input type="radio" name="tipo" value="admin"> Administrador</label>
+              </div>
+            </div>
+            <label class="campo" id="campoCodigo" hidden>
+              <span>Código de administrador</span>
+              <input type="text" id="regCodigo" class="codigo-admin" autocomplete="off">
+            </label>
+            <button type="submit" class="botao primario largura-total">Criar conta</button>
+          </form>
+          <p class="mensagem" id="mensagemRegistar" role="alert" hidden></p>
+        </section>
+      </div>
+
+      <p class="aviso">
+        Demonstração local: as contas e a sessão são guardadas no <code>localStorage</code> do browser.
+        O código de administrador é <code>ML-ADMIN-2026</code>. Isto não é autenticação segura — não usar com dados reais.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Simulador de viagem do Metropolitano de Lisboa: escolhe origem, destino, hora e data e vê o itinerário animado.">
+  <title>Metro de Lisboa · Simulador de viagem</title>
+  <link rel="stylesheet" href="css/estilo.css">
+  <script src="js/rede.js" defer></script>
+  <script src="js/conta.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <nav class="navegacao" aria-label="Navegação principal">
+      <a href="index.html" class="ativo">Simulador</a>
+      <a href="mapa.html">Mapa interativo</a>
+      <a href="conta.html" data-sessao="convidado">Entrar / Registar</a>
+      <a href="admin.html" data-sessao="admin">Admin</a>
+      <span class="sessao">
+        <span data-sessao="nome">Convidado</span>
+        <button type="button" class="botao ligado" data-acao="sair" data-sessao="autenticado">Sair</button>
+      </span>
+    </nav>
+
+    <header class="cabecalho">
+      <div class="marca">
+        <span class="marca-simbolo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <div>
+          <h1>Metropolitano de Lisboa</h1>
+          <p>Simulador de viagem · rede das 4 linhas</p>
+        </div>
+      </div>
+      <div class="horario" id="horarioServico">Serviço: 06:30 – 01:00</div>
+    </header>
+
+    <main>
+      <section class="cartao formulario">
+        <h2>Planear viagem</h2>
+        <form id="formulario">
+          <label class="campo">
+            <span>Estação de origem</span>
+            <select id="origem" required><option value="">Escolha...</option></select>
+          </label>
+          <label class="campo">
+            <span>Estação de destino</span>
+            <select id="destino" required><option value="">Escolha...</option></select>
+          </label>
+          <label class="campo">
+            <span>Hora de partida</span>
+            <select id="hora" required></select>
+          </label>
+          <label class="campo">
+            <span>Data</span>
+            <input type="date" id="data" required>
+          </label>
+          <button type="submit" class="botao primario">Simular viagem →</button>
+        </form>
+        <p class="erro" id="erro" role="alert" hidden></p>
+      </section>
+
+      <section class="legenda" aria-label="Linhas da rede">
+        <span class="legenda-item"><i class="linha-azul"></i> Azul</span>
+        <span class="legenda-item"><i class="linha-vermelha"></i> Vermelha</span>
+        <span class="legenda-item"><i class="linha-amarela"></i> Amarela</span>
+        <span class="legenda-item"><i class="linha-verde"></i> Verde</span>
+        <span class="legenda-nota">Círculo = correspondência</span>
+      </section>
+
+      <section id="resultado" class="resultado" hidden>
+        <div class="cartao resumo">
+          <div class="cabecalho-secao">
+            <h2>Itinerário</h2>
+            <span class="etiqueta" id="resumoRota">—</span>
+          </div>
+          <div class="indicadores">
+            <div><span>DURAÇÃO</span><strong id="duracao">—</strong></div>
+            <div><span>TRANSBORDOS</span><strong id="transbordos">—</strong></div>
+            <div><span>ESTAÇÕES</span><strong id="estacoesContagem">—</strong></div>
+            <div><span>CHEGADA</span><strong id="chegada">—</strong></div>
+          </div>
+          <ol class="pernadas" id="pernadas"></ol>
+        </div>
+
+        <div class="cartao animacao">
+          <div class="cabecalho-secao">
+            <h2>Viagem animada</h2>
+            <div class="controlos">
+              <button type="button" id="botaoPlay" class="botao primario">▶ Iniciar</button>
+              <button type="button" id="botaoReiniciar" class="botao">↻ Reiniciar</button>
+              <div class="segmentado" role="group" aria-label="Velocidade">
+                <button type="button" data-fator="1" class="ativo">1×</button>
+                <button type="button" data-fator="4">4×</button>
+                <button type="button" data-fator="10">10×</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="estado-viagem">
+            <span class="badge-linha" id="badgeLinha">—</span>
+            <strong id="estadoTexto">Pronto para partir</strong>
+            <span class="relogio" id="relogio">08:30</span>
+          </div>
+          <div class="barra"><div id="barraProgresso" class="barra-progresso"></div></div>
+
+          <div class="via">
+            <div class="via-fundo"></div>
+            <div class="trilho" id="trilho"></div>
+            <div class="comboio" id="comboio" aria-hidden="true"><span class="frente"></span><span class="janela"></span><span class="janela"></span><span class="janela"></span></div>
+          </div>
+
+          <ol class="eventos" id="eventos" aria-live="polite"></ol>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Estimativas simplificadas: 2 min entre estações, espera média conforme o horário e 4 min por transbordo. Dados da rede: Metropolitano de Lisboa.</p>
+    </footer>
+  </div>
+</body>
+</html>

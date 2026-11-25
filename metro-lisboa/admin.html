@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Painel de administração do Metropolitano de Lisboa: utilizadores e estado das linhas.">
+  <title>Administração · Metro de Lisboa</title>
+  <link rel="stylesheet" href="css/estilo.css">
+  <link rel="stylesheet" href="css/conta.css">
+  <script src="js/rede.js" defer></script>
+  <script src="js/conta.js" defer></script>
+  <script src="js/admin.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <nav class="navegacao" aria-label="Navegação principal">
+      <a href="index.html">Simulador</a>
+      <a href="mapa.html">Mapa interativo</a>
+      <a href="conta.html">Conta</a>
+      <a href="admin.html" class="ativo" data-sessao="admin">Admin</a>
+      <span class="sessao">
+        <span data-sessao="nome">Convidado</span>
+        <button type="button" class="botao ligado" data-acao="sair" data-sessao="autenticado">Sair</button>
+      </span>
+    </nav>
+
+    <header class="cabecalho">
+      <div class="marca">
+        <span class="marca-simbolo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <div>
+          <h1>Painel de administração</h1>
+          <p>Gestão de utilizadores e estado das linhas</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="cartao acesso-negado" id="acessoNegado">
+      <h2>Acesso reservado</h2>
+      <p>Precisas de uma conta de administrador para ver este painel.</p>
+      <a class="botao primario" href="conta.html">Ir para a página de conta</a>
+    </section>
+
+    <main id="painel" data-sessao="admin">
+      <div class="admin-grelha">
+        <section class="cartao">
+          <div class="cabecalho-secao">
+            <h2>Utilizadores</h2>
+            <span class="etiqueta" id="contagemUtilizadores">—</span>
+          </div>
+          <table class="tabela">
+            <thead>
+              <tr><th>Nome</th><th>E-mail</th><th>Tipo</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="listaUtilizadores"></tbody>
+          </table>
+        </section>
+
+        <section class="cartao">
+          <h2>Estado das linhas</h2>
+          <p class="subtitulo">Linhas interrompidas são ignoradas no cálculo de itinerários.</p>
+          <div id="listaLinhas"></div>
+          <p class="aviso">Alterações locais guardadas no <code>localStorage</code>. Não afetam o Metro real.</p>
+        </section>
+      </div>
+      <p class="mensagem" id="mensagemAdmin" role="status" hidden></p>
+    </main>
+  </div>
+</body>
+</html>
