@@ -1,0 +1,1842 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Metro de Lisboa: simulador de viagem, mapa interativo e contas com perfis cliente/admin.">
+  <title>Metro de Lisboa · simulador, mapa e contas</title>
+  <style>
+/* ============================================================
+   Metro de Lisboa · Simulador de viagem
+   Sem dependências externas
+   ============================================================ */
+
+:root {
+  --azul: #0057a8;
+  --vermelho: #e30613;
+  --amarelo: #f2c500;
+  --verde: #009a55;
+  --texto: #17212b;
+  --muted: #66757f;
+  --borda: #d7dee6;
+  --cartao: #ffffff;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: #eef2f6;
+  color: var(--texto);
+  font: 15px/1.5 "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+}
+.app { max-width: 1500px; margin: 0 auto; padding: 22px 24px 36px; }
+
+/* ---------- Navegação ---------- */
+.navegacao {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  background: #fff; border: 1px solid var(--borda); border-radius: 12px;
+  padding: 8px 10px; margin-bottom: 16px;
+}
+.navegacao a {
+  text-decoration: none; color: #40505e; font-size: 13px; font-weight: 600;
+  padding: 7px 12px; border-radius: 8px;
+}
+.navegacao a:hover { background: #eef3f8; color: var(--azul); }
+.navegacao a.ativo { background: var(--azul); color: #fff; }
+.navegacao .sessao { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.botao.ligado { padding: 5px 10px; font-size: 12px; }
+
+/* ---------- Cabeçalho ---------- */
+.cabecalho {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; margin-bottom: 18px;
+}
+.marca { display: flex; align-items: center; gap: 14px; }
+.marca-simbolo {
+  width: 52px; height: 52px; flex: none; display: grid;
+  grid-template-columns: 1fr 1fr; gap: 3px; padding: 5px;
+  background: #fff; border-radius: 10px; box-shadow: 0 3px 12px #1b2b3d18;
+}
+.marca-simbolo i { border-radius: 2px; }
+.marca-simbolo i:nth-child(1) { background: var(--vermelho); }
+.marca-simbolo i:nth-child(2) { background: var(--azul); }
+.marca-simbolo i:nth-child(3) { background: var(--verde); }
+.marca-simbolo i:nth-child(4) { background: var(--amarelo); }
+.cabecalho h1 { margin: 0; font-size: 22px; }
+.cabecalho p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+.horario {
+  background: #fff; border: 1px solid var(--borda); border-radius: 99px;
+  padding: 7px 14px; font-size: 12px; font-weight: 600; color: var(--muted);
+}
+
+/* ---------- Cartões ---------- */
+.cartao {
+  background: var(--cartao); border: 1px solid var(--borda);
+  border-radius: 14px; padding: 20px; box-shadow: 0 6px 20px #1b2b3d0a;
+}
+.cartao h2 { margin: 0 0 16px; font-size: 16px; }
+.cabecalho-secao {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.cabecalho-secao h2 { margin: 0; }
+.etiqueta { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .8px; }
+
+/* ---------- Formulário ---------- */
+.formulario form {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  gap: 14px; align-items: end;
+}
+.campo { display: grid; gap: 6px; min-width: 0; }
+.campo > span { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; }
+select, input[type="date"] {
+  width: 100%; padding: 10px 11px; font: inherit; color: var(--texto);
+  background: #f8fafc; border: 1px solid var(--borda); border-radius: 8px;
+}
+select:focus, input:focus { outline: 2px solid #0057a855; border-color: var(--azul); }
+.botao {
+  font: inherit; font-weight: 600; cursor: pointer;
+  border: 1px solid var(--borda); background: #f5f8fb; color: var(--texto);
+  border-radius: 8px; padding: 10px 14px; white-space: nowrap;
+}
+.botao:hover { background: #e8eef5; }
+.botao.primario { background: var(--azul); border-color: var(--azul); color: #fff; }
+.botao.primario:hover { background: #00488c; }
+.botoes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.botoes .botao { text-decoration: none; }
+.erro { margin: 14px 0 0; color: #b00020; font-size: 13px; font-weight: 600; }
+
+/* ---------- Legenda ---------- */
+.legenda {
+  display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
+  margin: 14px 2px; color: var(--muted); font-size: 12px;
+}
+.legenda-item { display: flex; align-items: center; gap: 6px; }
+.legenda-item i { width: 18px; height: 5px; border-radius: 3px; display: inline-block; }
+.linha-azul { background: var(--azul); }
+.linha-vermelha { background: var(--vermelho); }
+.linha-amarela { background: var(--amarelo); }
+.linha-verde { background: var(--verde); }
+.legenda-nota { margin-left: auto; }
+
+/* ---------- Resultado ---------- */
+.resultado { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 18px; align-items: start; }
+.indicadores { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+.indicadores > div { background: #f5f8fb; border: 1px solid var(--borda); border-radius: 10px; padding: 10px; }
+.indicadores span { display: block; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .8px; }
+.indicadores strong { display: block; margin-top: 4px; font-size: 19px; font-variant-numeric: tabular-nums; }
+.pernadas { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.pernada { border-left: 4px solid var(--cor-linha); background: #f8fafc; border-radius: 0 8px 8px 0; padding: 9px 11px; }
+.pernada .rotulo { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; margin-bottom: 5px; }
+.pernada .bola { width: 16px; height: 16px; border-radius: 50%; background: var(--cor-linha); color: #fff; display: grid; place-items: center; font-size: 10px; }
+.pernada .lista { color: #3d4b58; font-size: 12px; line-height: 1.45; }
+.pernada .lista b { color: var(--texto); }
+.transbordo { margin: 2px 0 2px 12px; color: #8a5a00; font-size: 12px; font-weight: 600; }
+
+/* ---------- Animação ---------- */
+.controlos { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.segmentado { display: flex; gap: 3px; background: #f2f5f8; border: 1px solid var(--borda); border-radius: 8px; padding: 3px; }
+.segmentado button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 12px; font-weight: 700; padding: 6px 9px; border-radius: 5px; cursor: pointer; }
+.segmentado button.ativo { background: #fff; color: var(--texto); box-shadow: 0 1px 4px #1b2b3d20; }
+.estado-viagem { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.badge-linha {
+  min-width: 26px; height: 26px; padding: 0 8px; border-radius: 99px;
+  display: grid; place-items: center; background: var(--azul); color: #fff;
+  font-size: 12px; font-weight: 800;
+}
+.estado-viagem strong { font-size: 14px; }
+.relogio { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--muted); }
+.barra { height: 8px; border-radius: 99px; background: #e6ebf1; overflow: hidden; margin-bottom: 14px; }
+.barra-progresso { height: 100%; width: 0; background: var(--vermelho); transition: width .25s linear; }
+
+.via {
+  position: relative; height: 180px; overflow-x: auto; overflow-y: hidden;
+  border-radius: 12px; background: linear-gradient(180deg, #2b3a4c, #131c27);
+  box-shadow: inset 0 0 40px #0006;
+}
+.via::-webkit-scrollbar { height: 8px; }
+.via::-webkit-scrollbar-thumb { background: #65758a; border-radius: 9px; }
+.trilho { position: relative; height: 100%; }
+.no {
+  position: absolute; top: 84px; width: 16px; height: 16px; margin-left: -8px;
+  border-radius: 50%; border: 3px solid #8494a7; background: #e8eef5; z-index: 2;
+}
+.no.passada { background: var(--vermelho); border-color: #ff8a8f; }
+.no.atual { width: 22px; height: 22px; margin-left: -11px; top: 81px; background: #fff; border-color: var(--vermelho); box-shadow: 0 0 0 5px #ffffff26; }
+.no .nome {
+  position: absolute; top: 26px; left: 50%; transform: translateX(-50%);
+  color: #dce6f2; font-size: 10px; white-space: nowrap; pointer-events: none;
+}
+.no.par .nome { top: auto; bottom: 26px; }
+.no.atual .nome { color: #fff; font-weight: 700; }
+.traco { position: absolute; top: 91px; height: 4px; border-radius: 2px; opacity: .75; }
+.traco.ativo { opacity: 1; box-shadow: 0 0 10px currentColor; }
+.comboio {
+  position: absolute; top: 79px; left: 0; width: 60px; height: 28px;
+  display: flex; align-items: center; gap: 5px; padding: 0 7px 0 9px;
+  background: var(--cor-comboio, var(--azul)); border-radius: 8px 12px 4px 4px;
+  box-shadow: 0 8px 14px #0008; z-index: 4; transition: left .25s linear;
+}
+.comboio .frente { width: 8px; height: 14px; border-radius: 2px; background: #fff6c9; box-shadow: 0 0 10px #fff3b0; }
+.comboio .janela { flex: 1; height: 13px; border-radius: 2px; background: #12263a; border: 1px solid #ffffff55; }
+.comboio.em-movimento .janela { animation: piscar .5s linear infinite alternate; }
+@keyframes piscar { from { background: #12263a; } to { background: #2b4d68; } }
+
+.eventos { list-style: none; margin: 14px 0 0; padding: 0; max-height: 150px; overflow-y: auto; display: grid; gap: 6px; }
+.eventos li { display: flex; gap: 10px; align-items: baseline; background: #f6f9fc; border: 1px solid var(--borda); border-radius: 7px; padding: 6px 9px; font-size: 12px; }
+.eventos time { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 11px; }
+.eventos .tipo { margin-left: auto; color: var(--azul); font-size: 10px; font-weight: 700; letter-spacing: .5px; }
+
+footer { margin-top: 20px; text-align: center; color: #7a8895; font-size: 11px; }
+[hidden] { display: none !important; }
+
+@media (max-width: 1150px) {
+  .resultado { grid-template-columns: 1fr; }
+  .formulario form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .formulario .botao { width: 100%; }
+}
+@media (max-width: 620px) {
+  .app { padding: 14px; }
+  .formulario form { grid-template-columns: 1fr; }
+  .cabecalho { align-items: flex-start; }
+  .horario { display: none; }
+  .controlos { width: 100%; }
+}
+
+
+/* Mapa interativo — estilos adicionais */
+
+.mapa-grelha { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
+.mapa-cartao { min-width: 0; }
+.controlos-mapa { display: flex; gap: 4px; }
+.controlos-mapa button {
+  min-width: 32px; border: 1px solid var(--borda); background: #f5f8fb;
+  border-radius: 7px; padding: 5px 8px; cursor: pointer; font-weight: 700; color: #40505e;
+}
+.controlos-mapa button:hover { background: #e8eef5; }
+.mapa-envolucao {
+  height: 620px; overflow: hidden; border: 1px solid var(--borda);
+  border-radius: 12px; background: linear-gradient(#fbfcfe, #f0f4f8);
+  cursor: grab; touch-action: none;
+}
+.mapa-envolucao.arrastando { cursor: grabbing; }
+#mapa { width: 100%; height: 100%; display: block; }
+.dica { margin: 10px 2px 0; color: var(--muted); font-size: 11px; }
+
+.linha-fundo { stroke-width: 11; stroke-linecap: round; opacity: .18; }
+.linha-tracado { stroke-width: 7; stroke-linecap: round; opacity: .9; }
+.linha-interrompida { stroke: #b00020; stroke-width: 3; stroke-dasharray: 10 8; opacity: .95; }
+.ligacao-correspondencia { stroke: #8997a5; stroke-width: 2; stroke-dasharray: 4 5; fill: none; opacity: .7; }
+
+.estacao { cursor: pointer; }
+.estacao .ponto { fill: #fff; stroke-width: 3; }
+.estacao .rotulo {
+  font-size: 10px; fill: #3e4d5a; pointer-events: none;
+  paint-order: stroke; stroke: #ffffffee; stroke-width: 2.5px; stroke-linejoin: round;
+}
+.estacao.interchange .ponto { fill: #fff; stroke: #17212b; stroke-width: 4; }
+.estacao.selecionada .ponto { fill: #17212b; stroke: #fff; stroke-width: 5; }
+.estacao.na-rota .ponto { fill: #fff; stroke: #e30613; stroke-width: 5; }
+.estacao:hover .ponto { fill: #e30613; }
+.rota-ativa {
+  fill: none; stroke: #e30613; stroke-width: 4; stroke-linecap: round;
+  stroke-dasharray: 9 7; animation: correr 1.2s linear infinite; opacity: .95;
+}
+@keyframes correr { to { stroke-dashoffset: -16; } }
+
+.info-cartao { display: grid; gap: 12px; }
+.info-cartao h2 { margin-bottom: 0; }
+.valor-grande { font-size: 17px; font-weight: 700; margin: 0; }
+.linhas-estacao { display: flex; gap: 6px; flex-wrap: wrap; }
+.etiqueta-linha { padding: 3px 8px; border-radius: 99px; color: #fff; font-size: 11px; font-weight: 700; }
+.selecao { display: grid; gap: 5px; background: #f5f8fb; border: 1px solid var(--borda); border-radius: 9px; padding: 10px; font-size: 12px; }
+.selecao b { color: var(--azul); }
+.resultado-info { display: grid; gap: 8px; font-size: 12px; }
+.resultado-info .linha-resultado { border-left: 4px solid var(--cor-linha); padding: 6px 9px; background: #f8fafc; border-radius: 0 6px 6px 0; }
+.simulation-link { text-align: center; text-decoration: none; }
+
+@media (max-width: 1100px) { .mapa-grelha { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .mapa-envolucao { height: 440px; } }
+
+
+/* Contas e painel de administração — estilos adicionais */
+
+.pagina-conta { max-width: 980px; margin: 0 auto; }
+.cartoes-conta { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+.cartoes-conta .cartao h2 { margin-bottom: 6px; }
+.subtitulo { color: var(--muted); font-size: 12px; margin: 0 0 18px; }
+.campo { margin-bottom: 12px; }
+.campo > span { display: block; }
+input[type="text"], input[type="email"], input[type="password"] {
+  width: 100%; padding: 10px 11px; font: inherit; color: var(--texto);
+  background: #f8fafc; border: 1px solid var(--borda); border-radius: 8px;
+}
+input:focus { outline: 2px solid #0057a855; border-color: var(--azul); }
+.botao.largura-total { width: 100%; }
+
+.tipos { display: flex; gap: 10px; margin: 4px 0 12px; }
+.tipos label {
+  flex: 1; display: flex; align-items: center; gap: 8px; cursor: pointer;
+  border: 1px solid var(--borda); border-radius: 8px; padding: 10px;
+  background: #f8fafc; font-size: 13px; font-weight: 600;
+}
+.tipos label:has(input:checked) { border-color: var(--azul); background: #e9f2fb; }
+.codigo-admin { background: #fff8e1; border-color: #e6c667; }
+.aviso {
+  margin-top: 16px; padding: 10px 12px; border-radius: 8px;
+  background: #eef3f8; color: #52616e; font-size: 11px; line-height: 1.5;
+}
+.mensagem { margin: 12px 0 0; padding: 9px 11px; border-radius: 8px; font-size: 12px; font-weight: 600; }
+.mensagem.erro { background: #fdecef; color: #b00020; }
+.mensagem.sucesso { background: #e7f6ee; color: #0a6b3d; }
+.sessao-atual { margin-bottom: 18px; }
+.sessao-atual strong { color: var(--azul); }
+
+/* ---------- Admin ---------- */
+.admin-grelha { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
+.tabela { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tabela th, .tabela td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--borda); vertical-align: middle; }
+.tabela th { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .6px; }
+.tabela select { padding: 6px 8px; font-size: 12px; width: auto; }
+.tabela .botao { padding: 6px 9px; font-size: 11px; }
+.etiqueta-tipo { padding: 3px 8px; border-radius: 99px; font-size: 10px; font-weight: 700; background: #e8eef5; color: #40505e; }
+.etiqueta-tipo.admin { background: #0057a8; color: #fff; }
+.linha-estado { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12px; }
+.linha-estado i { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.linha-estado select { flex: 1; padding: 6px 8px; font-size: 12px; }
+.acesso-negado { max-width: 560px; margin: 40px auto; text-align: center; }
+.acesso-negado h2 { margin-top: 0; }
+
+@media (max-width: 900px) {
+  .cartoes-conta, .admin-grelha { grid-template-columns: 1fr; }
+}
+
+
+
+/* ============================================================
+   Navegação por separadores (versão num único ficheiro)
+   ============================================================ */
+.navegacao button {
+  font: inherit; font-size: 13px; font-weight: 600; border: 0;
+  background: transparent; color: #40505e; padding: 7px 12px;
+  border-radius: 8px; cursor: pointer;
+}
+.navegacao button:hover { background: #eef3f8; color: var(--azul); }
+.navegacao button.ativo { background: var(--azul); color: #fff; }
+.pagina[hidden] { display: none !important; }
+
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <nav class="navegacao" aria-label="Navegação principal">
+      <button type="button" data-pagina="simulador" class="ativo">Simulador</button>
+      <button type="button" data-pagina="mapa">Mapa interativo</button>
+      <button type="button" data-pagina="conta">Conta</button>
+      <button type="button" data-pagina="admin" data-sessao="admin">Admin</button>
+      <span class="sessao">
+        <span data-sessao="nome">Convidado</span>
+        <button type="button" class="botao ligado" data-acao="sair" data-sessao="autenticado">Sair</button>
+      </span>
+    </nav>
+
+    <section id="pagina-simulador" class="pagina">
+<header class="cabecalho">
+      <div class="marca">
+        <span class="marca-simbolo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <div>
+          <h1>Metropolitano de Lisboa</h1>
+          <p>Simulador de viagem · rede das 4 linhas</p>
+        </div>
+      </div>
+      <div class="horario" id="horarioServico">Serviço: 06:30 – 01:00</div>
+    </header>
+
+    <main>
+      <section class="cartao formulario">
+        <h2>Planear viagem</h2>
+        <form id="formulario">
+          <label class="campo">
+            <span>Estação de origem</span>
+            <select id="origem" required><option value="">Escolha...</option></select>
+          </label>
+          <label class="campo">
+            <span>Estação de destino</span>
+            <select id="destino" required><option value="">Escolha...</option></select>
+          </label>
+          <label class="campo">
+            <span>Hora de partida</span>
+            <select id="hora" required></select>
+          </label>
+          <label class="campo">
+            <span>Data</span>
+            <input type="date" id="data" required>
+          </label>
+          <button type="submit" class="botao primario">Simular viagem →</button>
+        </form>
+        <p class="erro" id="erro" role="alert" hidden></p>
+      </section>
+
+      <section class="legenda" aria-label="Linhas da rede">
+        <span class="legenda-item"><i class="linha-azul"></i> Azul</span>
+        <span class="legenda-item"><i class="linha-vermelha"></i> Vermelha</span>
+        <span class="legenda-item"><i class="linha-amarela"></i> Amarela</span>
+        <span class="legenda-item"><i class="linha-verde"></i> Verde</span>
+        <span class="legenda-nota">Círculo = correspondência</span>
+      </section>
+
+      <section id="resultado" class="resultado" hidden>
+        <div class="cartao resumo">
+          <div class="cabecalho-secao">
+            <h2>Itinerário</h2>
+            <span class="etiqueta" id="resumoRota">—</span>
+          </div>
+          <div class="indicadores">
+            <div><span>DURAÇÃO</span><strong id="duracao">—</strong></div>
+            <div><span>TRANSBORDOS</span><strong id="transbordos">—</strong></div>
+            <div><span>ESTAÇÕES</span><strong id="estacoesContagem">—</strong></div>
+            <div><span>CHEGADA</span><strong id="chegada">—</strong></div>
+          </div>
+          <ol class="pernadas" id="pernadas"></ol>
+        </div>
+
+        <div class="cartao animacao">
+          <div class="cabecalho-secao">
+            <h2>Viagem animada</h2>
+            <div class="controlos">
+              <button type="button" id="botaoPlay" class="botao primario">▶ Iniciar</button>
+              <button type="button" id="botaoReiniciar" class="botao">↻ Reiniciar</button>
+              <div class="segmentado" role="group" aria-label="Velocidade">
+                <button type="button" data-fator="1" class="ativo">1×</button>
+                <button type="button" data-fator="4">4×</button>
+                <button type="button" data-fator="10">10×</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="estado-viagem">
+            <span class="badge-linha" id="badgeLinha">—</span>
+            <strong id="estadoTexto">Pronto para partir</strong>
+            <span class="relogio" id="relogio">08:30</span>
+          </div>
+          <div class="barra"><div id="barraProgresso" class="barra-progresso"></div></div>
+
+          <div class="via">
+            <div class="via-fundo"></div>
+            <div class="trilho" id="trilho"></div>
+            <div class="comboio" id="comboio" aria-hidden="true"><span class="frente"></span><span class="janela"></span><span class="janela"></span><span class="janela"></span></div>
+          </div>
+
+          <ol class="eventos" id="eventos" aria-live="polite"></ol>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Estimativas simplificadas: 2 min entre estações, espera média conforme o horário e 4 min por transbordo. Dados da rede: Metropolitano de Lisboa.</p>
+    </footer>
+    </section>
+
+    <section id="pagina-mapa" class="pagina" hidden>
+<header class="cabecalho">
+      <div class="marca">
+        <span class="marca-simbolo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <div>
+          <h1>Mapa interativo</h1>
+          <p>Clica numa estação para planear uma viagem</p>
+        </div>
+      </div>
+      <div class="horario" id="avisoLinhas">Todas as linhas operacionais</div>
+    </header>
+
+    <main class="mapa-grelha">
+      <section class="cartao mapa-cartao">
+        <div class="cabecalho-secao">
+          <h2>Rede das 4 linhas</h2>
+          <div class="controlos-mapa" role="group" aria-label="Zoom do mapa">
+            <button type="button" data-zoom="in" aria-label="Ampliar">+</button>
+            <button type="button" data-zoom="out" aria-label="Reduzir">−</button>
+            <button type="button" data-zoom="reset">Reset</button>
+          </div>
+        </div>
+        <div class="mapa-envolucao" id="mapaEnvolucao">
+          <svg id="mapa" viewBox="0 0 1200 560" role="img" aria-label="Mapa esquemático das linhas do Metro de Lisboa">
+            <g id="camadaLinhas"></g>
+            <g id="camadaLigacoes"></g>
+            <g id="camadaRota"></g>
+            <g id="camadaEstacoes"></g>
+          </svg>
+        </div>
+        <p class="dica">Clica numa estação para a selecionar · arrasta o mapa para o mover · usa + / − para ampliar.</p>
+      </section>
+
+      <aside class="cartao info-cartao">
+        <h2>Estação selecionada</h2>
+        <p class="valor-grande" id="nomeEstacao">—</p>
+        <div class="linhas-estacao" id="linhasEstacao"></div>
+
+        <div class="botoes">
+          <button type="button" id="definirOrigem" class="botao">Definir origem</button>
+          <button type="button" id="definirDestino" class="botao">Definir destino</button>
+        </div>
+        <div class="selecao" id="selecao"></div>
+
+        <label class="campo"><span>Hora de partida</span><select id="mapaHora"></select></label>
+        <label class="campo"><span>Data</span><input type="date" id="mapaData"></label>
+        <button type="button" id="calcular" class="botao primario">Calcular itinerário →</button>
+        <p class="erro" id="erroMapa" role="alert" hidden></p>
+
+        <div id="resultadoInfo" class="resultado-info"></div>
+        <a id="abrirSimulador" class="botao simulation-link" href="metro.html">Ver no simulador →</a>
+      </aside>
+    </main>
+    </section>
+
+    <section id="pagina-conta" class="pagina" hidden>
+<header class="cabecalho">
+      <div class="marca">
+        <span class="marca-simbolo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <div>
+          <h1>Área de cliente</h1>
+          <p>Entrar, registar e terminar sessão</p>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="cartao sessao-atual" id="sessaoAtual" hidden>
+        <h2>Sessão iniciada</h2>
+        <p>Estás autenticado como <strong data-sessao="nome">—</strong> (<span data-sessao="email"></span>).</p>
+        <div class="botoes">
+          <button type="button" class="botao" data-pagina="simulador">Ir para o simulador</button>
+          <button type="button" class="botao" data-pagina="mapa">Abrir mapa interativo</button>
+          <button type="button" class="botao" data-pagina="admin" data-sessao="admin">Abrir painel admin</button>
+        </div>
+      </section>
+
+      <div class="cartoes-conta" id="formularios">
+        <section class="cartao">
+          <h2>Entrar</h2>
+          <p class="subtitulo">Utiliza uma conta de cliente ou de administrador.</p>
+          <form id="formEntrar">
+            <label class="campo"><span>E-mail</span><input type="email" id="entrarEmail" required autocomplete="username"></label>
+            <label class="campo"><span>Palavra-passe</span><input type="password" id="entrarSenha" required autocomplete="current-password"></label>
+            <button type="submit" class="botao primario largura-total">Entrar →</button>
+          </form>
+          <p class="mensagem" id="mensagemEntrar" role="alert" hidden></p>
+          <p class="subtitulo" style="margin:14px 0 0">Teste: <code>cliente@metro.pt</code> / <code>cliente123</code> · <code>admin@metro.pt</code> / <code>admin123</code></p>
+        </section>
+
+        <section class="cartao">
+          <h2>Registar</h2>
+          <p class="subtitulo">Cria uma conta de cliente ou de administrador.</p>
+          <form id="formRegistar">
+            <label class="campo"><span>Nome</span><input type="text" id="regNome" required autocomplete="name"></label>
+            <label class="campo"><span>E-mail</span><input type="email" id="regEmail" required autocomplete="email"></label>
+            <label class="campo"><span>Palavra-passe</span><input type="password" id="regSenha" required minlength="6" autocomplete="new-password"></label>
+            <div class="campo">
+              <span>Tipo de conta</span>
+              <div class="tipos">
+                <label><input type="radio" name="tipo" value="cliente" checked> Cliente</label>
+                <label><input type="radio" name="tipo" value="admin"> Administrador</label>
+              </div>
+            </div>
+            <label class="campo" id="campoCodigo" hidden>
+              <span>Código de administrador</span>
+              <input type="text" id="regCodigo" class="codigo-admin" autocomplete="off">
+            </label>
+            <button type="submit" class="botao primario largura-total">Criar conta</button>
+          </form>
+          <p class="mensagem" id="mensagemRegistar" role="alert" hidden></p>
+        </section>
+      </div>
+
+      <p class="aviso">
+        Demonstração local: as contas e a sessão são guardadas no <code>localStorage</code> do browser.
+        O código de administrador é <code>ML-ADMIN-2026</code>. Isto não é autenticação segura — não usar com dados reais.
+      </p>
+    </main>
+    </section>
+
+    <section id="pagina-admin" class="pagina" hidden>
+<header class="cabecalho">
+      <div class="marca">
+        <span class="marca-simbolo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <div>
+          <h1>Painel de administração</h1>
+          <p>Gestão de utilizadores e estado das linhas</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="cartao acesso-negado" id="acessoNegado">
+      <h2>Acesso reservado</h2>
+      <p>Precisas de uma conta de administrador para ver este painel.</p>
+      <button type="button" class="botao primario" data-pagina="conta">Ir para a página de conta</button>
+    </section>
+
+    <main id="painel">
+      <div class="admin-grelha">
+        <section class="cartao">
+          <div class="cabecalho-secao">
+            <h2>Utilizadores</h2>
+            <span class="etiqueta" id="contagemUtilizadores">—</span>
+          </div>
+          <table class="tabela">
+            <thead>
+              <tr><th>Nome</th><th>E-mail</th><th>Tipo</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="listaUtilizadores"></tbody>
+          </table>
+        </section>
+
+        <section class="cartao">
+          <h2>Estado das linhas</h2>
+          <p class="subtitulo">Linhas interrompidas são ignoradas no cálculo de itinerários.</p>
+          <div id="listaLinhas"></div>
+          <p class="aviso">Alterações locais guardadas no <code>localStorage</code>. Não afetam o Metro real.</p>
+        </section>
+      </div>
+      <p class="mensagem" id="mensagemAdmin" role="status" hidden></p>
+    </main>
+    </section>
+  </div>
+
+  <script>
+/* ============================================================
+   Metro de Lisboa · modelo partilhado da rede
+   Usado pelo simulador, pelo mapa e pelo painel admin.
+   ============================================================ */
+(() => {
+  'use strict';
+
+  const MIN_SEGMENTO = 2;
+  const MIN_TRANSBORDO = 4;
+
+  const LINHAS = {
+    azul: { nome: 'Azul', sigla: 'Az', cor: '#0057a8', id: 'azul', estacoes: [
+      'Reboleira', 'Amadora Este', 'Alfornelos', 'Pontinha', 'Carnide',
+      'Colégio Militar / Luz', 'Alto dos Moinhos', 'Laranjeiras', 'Jardim Zoológico',
+      'Praça de Espanha', 'S. Sebastião', 'Parque', 'Marquês de Pombal', 'Avenida',
+      'Restauradores', 'Baixa-Chiado', 'Terreiro do Paço', 'Santa Apolónia'
+    ]},
+    vermelha: { nome: 'Vermelha', sigla: 'Vm', cor: '#e30613', id: 'vermelha', estacoes: [
+      'S. Sebastião', 'Saldanha', 'Alameda', 'Olaias', 'Bela Vista', 'Chelas',
+      'Olivais', 'Cabo Ruivo', 'Oriente', 'Moscavide', 'Encarnação', 'Aeroporto'
+    ]},
+    amarela: { nome: 'Amarela', sigla: 'Am', cor: '#f2c500', id: 'amarela', estacoes: [
+      'Odivelas', 'Senhor Roubado', 'Ameixoeira', 'Lumiar', 'Quinta das Conchas',
+      'Campo Grande', 'Cidade Universitária', 'Entre Campos', 'Campo Pequeno',
+      'Saldanha', 'Picoas', 'Marquês de Pombal', 'Rato'
+    ]},
+    verde: { nome: 'Verde', sigla: 'Vd', cor: '#009a55', id: 'verde', estacoes: [
+      'Telheiras', 'Campo Grande', 'Alvalade', 'Roma', 'Areeiro', 'Alameda',
+      'Arroios', 'Anjos', 'Intendente', 'Martim Moniz', 'Rossio', 'Baixa-Chiado', 'Cais do Sodré'
+    ]}
+  };
+
+  const grafo = new Map();
+  const linhasPorEstacao = new Map();
+  const todasEstacoes = new Set();
+
+  Object.entries(LINHAS).forEach(([id, linha]) => {
+    linha.estacoes.forEach((nome, i) => {
+      todasEstacoes.add(nome);
+      if (!linhasPorEstacao.has(nome)) linhasPorEstacao.set(nome, []);
+      linhasPorEstacao.get(nome).push(id);
+      const chave = `${nome}|${id}`;
+      const vizinhos = [];
+      if (i > 0) vizinhos.push(`${linha.estacoes[i - 1]}|${id}`);
+      if (i < linha.estacoes.length - 1) vizinhos.push(`${linha.estacoes[i + 1]}|${id}`);
+      grafo.set(chave, vizinhos);
+    });
+  });
+
+  function esperaMedia(minuto, data) {
+    const dia = new Date(`${data}T12:00:00`);
+    const fimDeSemana = dia.getDay() === 0 || dia.getDay() === 6;
+    const h = minuto / 60;
+    if (h < 6 || h >= 23.5) return 12;
+    if (h < 7) return 7;
+    if (fimDeSemana) return 8;
+    if ((h >= 7 && h < 9.5) || (h >= 17 && h < 19.5)) return 4;
+    return 6;
+  }
+
+  function formatarHora(minuto) {
+    const m = ((Math.round(minuto) % 1440) + 1440) % 1440;
+    return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+  }
+
+  // linhasAtivas: array opcional com os ids das linhas disponíveis
+  function melhorRota(origem, destino, minuto, data, linhasAtivas = null) {
+    if (origem === destino) return null;
+    const ativa = (id) => !linhasAtivas || linhasAtivas.includes(id);
+    const origens = (linhasPorEstacao.get(origem) || []).filter(ativa);
+    const destinos = (linhasPorEstacao.get(destino) || []).filter(ativa);
+    if (!origens.length || !destinos.length) return null;
+
+    const espera = esperaMedia(minuto, data) / 2;
+    const dist = new Map();
+    const anterior = new Map();
+    const fila = [];
+    origens.forEach((id) => {
+      const chave = `${origem}|${id}`;
+      dist.set(chave, espera);
+      anterior.set(chave, null);
+      fila.push(chave);
+    });
+
+    const visitados = new Set();
+    while (fila.length) {
+      fila.sort((a, b) => dist.get(a) - dist.get(b));
+      const atual = fila.shift();
+      if (visitados.has(atual)) continue;
+      visitados.add(atual);
+      const [estacao, linhaAtual] = atual.split('|');
+      if (estacao === destino) break;
+
+      (grafo.get(atual) || []).forEach((chave) => {
+        if (!ativa(chave.split('|')[1])) return;
+        const novo = dist.get(atual) + MIN_SEGMENTO;
+        if (novo < (dist.get(chave) ?? Infinity)) {
+          dist.set(chave, novo);
+          anterior.set(chave, atual);
+          fila.push(chave);
+        }
+      });
+      (linhasPorEstacao.get(estacao) || []).forEach((outra) => {
+        if (outra === linhaAtual || !ativa(outra)) return;
+        const chave = `${estacao}|${outra}`;
+        const novo = dist.get(atual) + MIN_TRANSBORDO;
+        if (novo < (dist.get(chave) ?? Infinity)) {
+          dist.set(chave, novo);
+          anterior.set(chave, atual);
+          fila.push(chave);
+        }
+      });
+    }
+
+    let fim = null;
+    destinos.forEach((id) => {
+      const chave = `${destino}|${id}`;
+      if (dist.has(chave) && (fim === null || dist.get(chave) < dist.get(fim))) fim = chave;
+    });
+    if (!fim) return null;
+
+    const nos = [];
+    for (let chave = fim; chave !== null && chave !== undefined; chave = anterior.get(chave)) nos.push(chave);
+    nos.reverse();
+
+    const pernadas = [];
+    nos.forEach((no, i) => {
+      const [estacao, linha] = no.split('|');
+      const anteriorNo = i > 0 ? nos[i - 1].split('|') : null;
+      if (!anteriorNo || anteriorNo[1] !== linha) {
+        pernadas.push({ linha, de: estacao, ate: estacao, estacoes: [estacao] });
+      } else {
+        const pernada = pernadas[pernadas.length - 1];
+        pernada.ate = estacao;
+        pernada.estacoes.push(estacao);
+      }
+    });
+
+    const passos = [{ tipo: 'embarque', estacao: origem, linha: nos[0].split('|')[1], min: Math.max(1, Math.round(espera)) }];
+    for (let i = 1; i < nos.length; i++) {
+      const [de, linhaDe] = nos[i - 1].split('|');
+      const [para, linhaPara] = nos[i].split('|');
+      if (de === para) passos.push({ tipo: 'transbordo', estacao: de, deLinha: linhaDe, linha: linhaPara, min: MIN_TRANSBORDO });
+      else passos.push({ tipo: 'segmento', de, para, linha: linhaPara, min: MIN_SEGMENTO });
+    }
+    passos.push({ tipo: 'chegada', estacao: destino, linha: nos[nos.length - 1].split('|')[1], min: 0.5 });
+
+    const cadeia = [origem, ...passos.filter((p) => p.tipo === 'segmento').map((p) => p.para)];
+    let acumulado = 0;
+    const linhaDoTempo = passos.map((passo) => {
+      const item = { ...passo, inicio: acumulado, fim: acumulado + passo.min };
+      acumulado += passo.min;
+      return item;
+    });
+
+    return {
+      origem, destino, minutoSaida: minuto, pernadas, cadeia,
+      passos: linhaDoTempo, total: acumulado, transbordos: pernadas.length - 1
+    };
+  }
+
+  window.MetroLisboa = {
+    LINHAS, linhasPorEstacao, todasEstacoes: [...todasEstacoes].sort((a, b) => a.localeCompare(b, 'pt')),
+    grafo, esperaMedia, formatarHora, melhorRota
+  };
+})();
+
+
+/* ============================================================
+   Metro de Lisboa · contas e sessão (demonstração local)
+   AVISO: autenticação guardada em localStorage. Serve apenas
+   para demonstrar perfis; não é segurança real.
+   ============================================================ */
+(() => {
+  'use strict';
+
+  const CHAVE_UTILIZADORES = 'ml_utilizadores';
+  const CHAVE_SESSAO = 'ml_sessao';
+  const CHAVE_LINHAS = 'ml_linhas_status';
+  const CODIGO_ADMIN = 'ML-ADMIN-2026';
+
+  const storage = {
+    get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (_) { /* sem storage */ } }
+  };
+
+  // Hash simples — apenas para não guardar a palavra-passe em texto claro.
+  function hash(texto) {
+    let h = 5381;
+    for (let i = 0; i < texto.length; i++) h = ((h << 5) + h) ^ texto.charCodeAt(i);
+    return (h >>> 0).toString(16).padStart(8, '0');
+  }
+
+  function carregar() {
+    try {
+      const dados = JSON.parse(storage.get(CHAVE_UTILIZADORES) || '[]');
+      return Array.isArray(dados) ? dados : [];
+    } catch (_) { return []; }
+  }
+
+  function guardar(utilizadores) {
+    storage.set(CHAVE_UTILIZADORES, JSON.stringify(utilizadores));
+  }
+
+  function garantirContasIniciais() {
+    if (carregar().length) return;
+    guardar([
+      { id: 'u-admin', nome: 'Administrador', email: 'admin@metro.pt', senha: hash('admin123'), tipo: 'admin', criado: new Date().toISOString() },
+      { id: 'u-cliente', nome: 'Cliente de teste', email: 'cliente@metro.pt', senha: hash('cliente123'), tipo: 'cliente', criado: new Date().toISOString() }
+    ]);
+  }
+
+  function registar({ nome, email, senha, tipo, codigo }) {
+    garantirContasIniciais();
+    const utilizadores = carregar();
+    const emailNormalizado = String(email || '').trim().toLowerCase();
+    if (!nome || !emailNormalizado || !senha) return { ok: false, erro: 'Preenche todos os campos obrigatórios.' };
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailNormalizado)) return { ok: false, erro: 'Introduz um e-mail válido.' };
+    if (senha.length < 6) return { ok: false, erro: 'A palavra-passe deve ter pelo menos 6 caracteres.' };
+    if (utilizadores.some((u) => u.email === emailNormalizado)) return { ok: false, erro: 'Já existe uma conta com este e-mail.' };
+    if (tipo === 'admin' && codigo !== CODIGO_ADMIN) return { ok: false, erro: 'Código de administrador inválido.' };
+
+    const utilizador = {
+      id: `u-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      nome: String(nome).trim(),
+      email: emailNormalizado,
+      senha: hash(senha),
+      tipo: tipo === 'admin' ? 'admin' : 'cliente',
+      criado: new Date().toISOString()
+    };
+    guardar([...utilizadores, utilizador]);
+    return { ok: true, utilizador };
+  }
+
+  function entrar(email, senha) {
+    garantirContasIniciais();
+    const emailNormalizado = String(email || '').trim().toLowerCase();
+    const utilizador = carregar().find((u) => u.email === emailNormalizado && u.senha === hash(senha || ''));
+    if (!utilizador) return { ok: false, erro: 'E-mail ou palavra-passe incorretos.' };
+    const sessao = { id: utilizador.id, nome: utilizador.nome, email: utilizador.email, tipo: utilizador.tipo };
+    storage.set(CHAVE_SESSAO, JSON.stringify(sessao));
+    aplicarSessaoUI();
+    return { ok: true, utilizador: sessao };
+  }
+
+  function sair() {
+    storage.set(CHAVE_SESSAO, '');
+    aplicarSessaoUI();
+  }
+
+  function atual() {
+    try {
+      const sessao = JSON.parse(storage.get(CHAVE_SESSAO) || 'null');
+      return sessao && sessao.email ? sessao : null;
+    } catch (_) { return null; }
+  }
+
+  function eAdmin() {
+    const u = atual();
+    return !!u && u.tipo === 'admin';
+  }
+
+  function listar() {
+    garantirContasIniciais();
+    return carregar();
+  }
+
+  function alterarTipo(id, tipo) {
+    if (!eAdmin()) return false;
+    const utilizadores = carregar().map((u) => u.id === id ? { ...u, tipo: tipo === 'admin' ? 'admin' : 'cliente' } : u);
+    guardar(utilizadores);
+    const sessao = atual();
+    if (sessao && sessao.id === id) {
+      storage.set(CHAVE_SESSAO, JSON.stringify({ ...sessao, tipo }));
+      aplicarSessaoUI();
+    }
+    return true;
+  }
+
+  function remover(id) {
+    if (!eAdmin()) return false;
+    const sessao = atual();
+    if (sessao && sessao.id === id) return false;
+    guardar(carregar().filter((u) => u.id !== id));
+    return true;
+  }
+
+  function estadoLinhas() {
+    try {
+      const dados = JSON.parse(storage.get(CHAVE_LINHAS) || '{}');
+      return { azul: 'operacional', vermelha: 'operacional', amarela: 'operacional', verde: 'operacional', ...dados };
+    } catch (_) { return { azul: 'operacional', vermelha: 'operacional', amarela: 'operacional', verde: 'operacional' }; }
+  }
+
+  function definirLinha(id, estado) {
+    if (!eAdmin()) return false;
+    const dados = estadoLinhas();
+    dados[id] = estado === 'interrompida' ? 'interrompida' : 'operacional';
+    storage.set(CHAVE_LINHAS, JSON.stringify(dados));
+    return true;
+  }
+
+  function aplicarSessaoUI() {
+    const u = atual();
+    const mostra = (attr, visivel) => document.querySelectorAll(`[data-sessao="${attr}"]`).forEach((e) => { e.hidden = !visivel; });
+    document.querySelectorAll('[data-sessao="nome"]').forEach((e) => { e.textContent = u ? u.nome : 'Convidado'; });
+    document.querySelectorAll('[data-sessao="email"]').forEach((e) => { e.textContent = u ? u.email : ''; });
+    mostra('autenticado', !!u);
+    mostra('convidado', !u);
+    mostra('admin', !!u && u.tipo === 'admin');
+    mostra('cliente', !!u && u.tipo === 'cliente');
+  }
+
+  document.addEventListener('click', (evento) => {
+    const botao = evento.target.closest && evento.target.closest('[data-acao="sair"]');
+    if (!botao) return;
+    sair();
+    if (typeof window.mostrarPagina === 'function') window.mostrarPagina('conta');
+    if (typeof window.atualizarContaUI === 'function') window.atualizarContaUI();
+  });
+
+  garantirContasIniciais();
+  aplicarSessaoUI();
+  window.Conta = {
+    CODIGO_ADMIN, registar, entrar, sair, atual, eAdmin, listar,
+    alterarTipo, remover, estadoLinhas, definirLinha, aplicarSessaoUI
+  };
+})();
+
+
+/* ============================================================
+   Metro de Lisboa · Simulador de viagem (interface e animação)
+   Usa js/rede.js para o grafo e o cálculo de itinerários.
+   ============================================================ */
+(() => {
+  'use strict';
+
+  const $ = (id) => document.getElementById(id);
+  const { LINHAS, todasEstacoes, melhorRota, formatarHora } = window.MetroLisboa;
+  const ESPACO = 118;
+  const SEG_POR_MIN = 2.5;
+
+  const el = {
+    formulario: $('formulario'), origem: $('origem'), destino: $('destino'),
+    hora: $('hora'), data: $('data'), erro: $('erro'), resultado: $('resultado'),
+    resumoRota: $('resumoRota'), duracao: $('duracao'), transbordos: $('transbordos'),
+    estacoesContagem: $('estacoesContagem'), chegada: $('chegada'), pernadas: $('pernadas'),
+    botaoPlay: $('botaoPlay'), botaoReiniciar: $('botaoReiniciar'),
+    badgeLinha: $('badgeLinha'), estadoTexto: $('estadoTexto'), relogio: $('relogio'),
+    barraProgresso: $('barraProgresso'), via: $('trilho').parentElement,
+    trilho: $('trilho'), comboio: $('comboio'), eventos: $('eventos')
+  };
+
+  function linhasAtivas() {
+    try {
+      const estado = JSON.parse(localStorage.getItem('ml_linhas_status') || '{}');
+      return Object.keys(LINHAS).filter((id) => estado[id] !== 'interrompida');
+    } catch (_) { return Object.keys(LINHAS); }
+  }
+
+  function popularFormulario() {
+    todasEstacoes.forEach((nome) => {
+      [el.origem, el.destino].forEach((select) => {
+        const opcao = document.createElement('option');
+        opcao.value = nome;
+        opcao.textContent = nome;
+        select.appendChild(opcao);
+      });
+    });
+    el.origem.value = 'Aeroporto';
+    el.destino.value = 'Rato';
+
+    const horarios = [];
+    for (let m = 0; m <= 60; m += 15) horarios.push(m);
+    for (let m = 6 * 60; m < 24 * 60; m += 15) horarios.push(m);
+    horarios.forEach((m) => {
+      const opcao = document.createElement('option');
+      opcao.value = String(m);
+      opcao.textContent = formatarHora(m);
+      el.hora.appendChild(opcao);
+    });
+    el.hora.value = String(8 * 60 + 30);
+
+    const agora = new Date();
+    const local = new Date(agora.getTime() - agora.getTimezoneOffset() * 60000);
+    el.data.value = local.toISOString().slice(0, 10);
+  }
+
+  function mostrarResumo(rota) {
+    el.resumoRota.textContent = `${rota.origem} → ${rota.destino}`;
+    el.duracao.textContent = `${Math.round(rota.total)} min`;
+    el.transbordos.textContent = String(rota.transbordos);
+    el.estacoesContagem.textContent = String(rota.cadeia.length - 1);
+    el.chegada.textContent = formatarHora(rota.minutoSaida + rota.total);
+
+    el.pernadas.replaceChildren();
+    rota.pernadas.forEach((pernada) => {
+      const linha = LINHAS[pernada.linha];
+      const bloco = document.createElement('li');
+      bloco.className = 'pernada';
+      bloco.style.setProperty('--cor-linha', linha.cor);
+      const rotulo = document.createElement('div');
+      rotulo.className = 'rotulo';
+      const bola = document.createElement('span');
+      bola.className = 'bola';
+      bola.textContent = linha.sigla[0];
+      rotulo.append(bola, document.createTextNode(`Linha ${linha.nome} · ${pernada.estacoes.length - 1} paragens`));
+      const lista = document.createElement('div');
+      lista.className = 'lista';
+      const inicio = document.createElement('b');
+      inicio.textContent = pernada.de;
+      lista.append(inicio, document.createTextNode(` → ${pernada.estacoes.slice(1).join(' → ')}`));
+      bloco.append(rotulo, lista);
+      el.pernadas.appendChild(bloco);
+    });
+  }
+
+  function construirTrilho(rota) {
+    el.trilho.replaceChildren();
+    el.trilho.style.width = `${rota.cadeia.length * ESPACO + 40}px`;
+    const segmentos = rota.passos.filter((p) => p.tipo === 'segmento');
+    rota.cadeia.forEach((estacao, i) => {
+      if (i < segmentos.length) {
+        const traco = document.createElement('div');
+        traco.className = 'traco';
+        traco.style.left = `${60 + i * ESPACO}px`;
+        traco.style.width = `${ESPACO}px`;
+        traco.style.background = LINHAS[segmentos[i].linha].cor;
+        traco.style.color = LINHAS[segmentos[i].linha].cor;
+        el.trilho.appendChild(traco);
+      }
+      const no = document.createElement('div');
+      no.className = `no${i % 2 ? ' par' : ''}`;
+      no.style.left = `${60 + i * ESPACO}px`;
+      const nome = document.createElement('span');
+      nome.className = 'nome';
+      nome.textContent = estacao;
+      no.appendChild(nome);
+      no.dataset.indice = String(i);
+      el.trilho.appendChild(no);
+    });
+  }
+
+  const anim = { rota: null, tempo: 0, tocando: false, fator: 1, ultimoPasso: -1, indiceEstacao: -1 };
+
+  function registarEvento(passo) {
+    const item = document.createElement('li');
+    const hora = document.createElement('time');
+    hora.textContent = formatarHora(anim.rota.minutoSaida + passo.inicio);
+    const texto = document.createElement('span');
+    const tipo = document.createElement('span');
+    tipo.className = 'tipo';
+    if (passo.tipo === 'embarque') {
+      texto.textContent = `Embarque em ${passo.estacao} · Linha ${LINHAS[passo.linha].nome}`;
+      tipo.textContent = 'PARTIDA';
+    } else if (passo.tipo === 'segmento') {
+      texto.textContent = `${passo.de} → ${passo.para} · Linha ${LINHAS[passo.linha].nome}`;
+      tipo.textContent = 'VIAGEM';
+    } else if (passo.tipo === 'transbordo') {
+      texto.textContent = `Transbordo em ${passo.estacao}: ${LINHAS[passo.deLinha].nome} → ${LINHAS[passo.linha].nome}`;
+      tipo.textContent = 'TRANSBORDO';
+    } else {
+      texto.textContent = `Chegada a ${passo.estacao}`;
+      tipo.textContent = 'CHEGADA';
+    }
+    item.append(hora, texto, tipo);
+    el.eventos.prepend(item);
+    while (el.eventos.children.length > 20) el.eventos.lastElementChild.remove();
+  }
+
+  function desenharAnimacao() {
+    const rota = anim.rota;
+    if (!rota) return;
+    let indice = rota.passos.findIndex((p) => anim.tempo < p.fim);
+    if (indice === -1) indice = rota.passos.length - 1;
+    const passo = rota.passos[indice];
+    const linha = LINHAS[passo.linha];
+    if (indice !== anim.ultimoPasso) {
+      anim.ultimoPasso = indice;
+      registarEvento(passo);
+    }
+    const indiceEstacao = rota.cadeia.indexOf(passo.tipo === 'segmento' ? passo.de : passo.estacao);
+    const fracao = passo.tipo === 'segmento' ? Math.min(1, (anim.tempo - passo.inicio) / passo.min) : 0;
+    const posicao = 60 + (indiceEstacao + fracao) * ESPACO;
+    el.comboio.style.left = `${posicao - 30}px`;
+    el.comboio.style.setProperty('--cor-comboio', linha.cor);
+    el.comboio.classList.toggle('em-movimento', passo.tipo === 'segmento' && anim.tocando);
+
+    el.badgeLinha.style.background = linha.cor;
+    el.badgeLinha.textContent = linha.sigla;
+    el.relogio.textContent = formatarHora(rota.minutoSaida + anim.tempo);
+    el.barraProgresso.style.width = `${Math.min(100, anim.tempo / rota.total * 100)}%`;
+
+    if (passo.tipo === 'embarque') el.estadoTexto.textContent = `A aguardar comboio em ${passo.estacao}`;
+    else if (passo.tipo === 'segmento') el.estadoTexto.textContent = `A caminho de ${passo.para} · Linha ${linha.nome}`;
+    else if (passo.tipo === 'transbordo') el.estadoTexto.textContent = `Transbordo em ${passo.estacao} para a Linha ${linha.nome}`;
+    else el.estadoTexto.textContent = `Chegada a ${passo.estacao}`;
+
+    if (indiceEstacao !== anim.indiceEstacao) {
+      anim.indiceEstacao = indiceEstacao;
+      el.trilho.querySelectorAll('.no').forEach((no) => {
+        const i = Number(no.dataset.indice);
+        no.classList.toggle('atual', i === indiceEstacao);
+        no.classList.toggle('passada', i < indiceEstacao);
+      });
+      el.via.scrollTo({ left: Math.max(0, posicao - el.via.clientWidth / 2), behavior: 'smooth' });
+    }
+  }
+
+  function prepararAnimacao(rota) {
+    Object.assign(anim, { rota, tempo: 0, tocando: false, ultimoPasso: -1, indiceEstacao: -1 });
+    el.eventos.replaceChildren();
+    el.botaoPlay.textContent = '▶ Iniciar';
+    el.resultado.hidden = false;
+    mostrarResumo(rota);
+    construirTrilho(rota);
+    desenharAnimacao();
+  }
+
+  function mostrarErro(mensagem) {
+    el.erro.textContent = mensagem;
+    el.erro.hidden = false;
+  }
+
+  function calcularEMostrar({ rolar = false } = {}) {
+    const origem = el.origem.value;
+    const destino = el.destino.value;
+    const minuto = Number(el.hora.value);
+    const data = el.data.value;
+    if (!origem || !destino || !data) return mostrarErro('Preenche a origem, o destino e a data.');
+    if (origem === destino) return mostrarErro('A origem e o destino têm de ser estações diferentes.');
+    const rota = melhorRota(origem, destino, minuto, data, linhasAtivas());
+    if (!rota) return mostrarErro('Não foi possível calcular este itinerário com as linhas disponíveis.');
+    el.erro.hidden = true;
+    prepararAnimacao(rota);
+    if (rolar) el.resultado.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function alternarPlay() {
+    if (!anim.rota) return;
+    if (anim.tempo >= anim.rota.total - 0.01) {
+      Object.assign(anim, { tempo: 0, ultimoPasso: -1, indiceEstacao: -1 });
+      el.eventos.replaceChildren();
+    }
+    anim.tocando = !anim.tocando;
+    el.botaoPlay.textContent = anim.tocando ? '⏸ Pausar' : '▶ Continuar';
+  }
+
+  function reiniciar() {
+    if (!anim.rota) return;
+    Object.assign(anim, { tempo: 0, tocando: false, ultimoPasso: -1, indiceEstacao: -1 });
+    el.eventos.replaceChildren();
+    el.botaoPlay.textContent = '▶ Iniciar';
+    desenharAnimacao();
+  }
+
+  function ligarControlos() {
+    el.formulario.addEventListener('submit', (evento) => {
+      evento.preventDefault();
+      calcularEMostrar({ rolar: true });
+    });
+    el.botaoPlay.addEventListener('click', alternarPlay);
+    el.botaoReiniciar.addEventListener('click', reiniciar);
+    document.querySelectorAll('[data-fator]').forEach((botao) => {
+      botao.addEventListener('click', () => {
+        anim.fator = Number(botao.dataset.fator);
+        document.querySelectorAll('[data-fator]').forEach((b) => b.classList.toggle('ativo', b === botao));
+      });
+    });
+  }
+
+  let ultimoQuadro = performance.now();
+  function quadro(agora) {
+    const dt = Math.min((agora - ultimoQuadro) / 1000, 0.1);
+    ultimoQuadro = agora;
+    if (anim.tocando && anim.rota) {
+      anim.tempo = Math.min(anim.rota.total, anim.tempo + dt * anim.fator / SEG_POR_MIN);
+      if (anim.tempo >= anim.rota.total) {
+        anim.tocando = false;
+        el.botaoPlay.textContent = '↻ Reiniciar';
+      }
+      desenharAnimacao();
+    }
+    requestAnimationFrame(quadro);
+  }
+
+  popularFormulario();
+  ligarControlos();
+
+  const parametros = new URLSearchParams(location.search);
+  if (parametros.has('origem') && todasEstacoes.includes(parametros.get('origem'))) el.origem.value = parametros.get('origem');
+  if (parametros.has('destino') && todasEstacoes.includes(parametros.get('destino'))) el.destino.value = parametros.get('destino');
+  if (parametros.has('hora') && el.hora.querySelector(`option[value="${parametros.get('hora')}"]`)) el.hora.value = parametros.get('hora');
+  if (parametros.has('origem') && parametros.has('destino')) calcularEMostrar();
+
+  requestAnimationFrame(quadro);
+})();
+
+
+/* ============================================================
+   Metro de Lisboa · mapa interativo
+   Desenha as 4 linhas em SVG, permite zoom/pan, seleção de
+   estações e cálculo de itinerário a partir do mapa.
+   Usa js/rede.js e js/conta.js.
+   ============================================================ */
+(() => {
+  'use strict';
+
+  const $ = (id) => document.getElementById(id);
+  const NS = 'http://www.w3.org/2000/svg';
+  const { LINHAS, linhasPorEstacao, todasEstacoes, melhorRota, formatarHora } = window.MetroLisboa;
+
+  const X_MIN = 50;
+  const X_MAX = 1150;
+  const Y_POR_LINHA = { azul: 90, vermelha: 210, amarela: 330, verde: 450 };
+
+  const el = {
+    svg: $('mapa'), envolucao: $('mapaEnvolucao'),
+    camadaLinhas: $('camadaLinhas'), camadaLigacoes: $('camadaLigacoes'),
+    camadaRota: $('camadaRota'), camadaEstacoes: $('camadaEstacoes'),
+    nomeEstacao: $('nomeEstacao'), linhasEstacao: $('linhasEstacao'),
+    definirOrigem: $('definirOrigem'), definirDestino: $('definirDestino'),
+    selecao: $('selecao'), hora: $('mapaHora'), data: $('mapaData'), calcular: $('calcular'),
+    erro: $('erroMapa'), resultadoInfo: $('resultadoInfo'),
+    abrirSimulador: $('abrirSimulador'), avisoLinhas: $('avisoLinhas')
+  };
+
+  function linhasAtivas() {
+    const estado = window.Conta.estadoLinhas();
+    return Object.keys(LINHAS).filter((id) => estado[id] !== 'interrompida');
+  }
+
+  function svgEl(tag, atributos = {}, texto = null) {
+    const no = document.createElementNS(NS, tag);
+    Object.entries(atributos).forEach(([k, v]) => no.setAttribute(k, String(v)));
+    if (texto !== null) no.textContent = texto;
+    return no;
+  }
+
+  /* ---------- Layout esquemático ---------- */
+  // Ordenação topológica: cada estação recebe o nível do maior caminho
+  // a partir das origens. Assim, uma correspondência tem sempre o mesmo x
+  // em todas as linhas e nenhuma linha "volta para trás".
+  const sucessores = new Map(todasEstacoes.map((nome) => [nome, new Set()]));
+  const grau = new Map(todasEstacoes.map((nome) => [nome, 0]));
+  Object.values(LINHAS).forEach((linha) => {
+    for (let i = 1; i < linha.estacoes.length; i++) {
+      const de = linha.estacoes[i - 1];
+      const para = linha.estacoes[i];
+      if (!sucessores.get(de).has(para)) {
+        sucessores.get(de).add(para);
+        grau.set(para, grau.get(para) + 1);
+      }
+    }
+  });
+
+  const fila = todasEstacoes.filter((nome) => grau.get(nome) === 0).map((nome) => ({ nome, nivel: 0 }));
+  const nivel = new Map();
+  while (fila.length) {
+    fila.sort((a, b) => a.nivel - b.nivel);
+    const atual = fila.shift();
+    if (nivel.has(atual.nome)) continue;
+    nivel.set(atual.nome, atual.nivel);
+    sucessores.get(atual.nome).forEach((destino) => {
+      grau.set(destino, grau.get(destino) - 1);
+      if (grau.get(destino) === 0) fila.push({ nome: destino, nivel: atual.nivel + 1 });
+    });
+  }
+  const nivelMax = Math.max(1, ...nivel.values());
+  const xPorEstacao = new Map(todasEstacoes.map((nome) => [
+    nome, X_MIN + (nivel.get(nome) || 0) * (X_MAX - X_MIN) / nivelMax
+  ]));
+
+  const pontos = [];
+  const porChave = new Map();
+  Object.entries(LINHAS).forEach(([id, linha]) => {
+    linha.estacoes.forEach((nome, i) => {
+      const pos = {
+        nome,
+        linha: id,
+        indice: i,
+        x: xPorEstacao.get(nome),
+        y: Y_POR_LINHA[id]
+      };
+      pontos.push(pos);
+      porChave.set(`${nome}|${id}`, pos);
+    });
+  });
+
+  const correspondencias = todasEstacoes
+    .map((nome) => linhasPorEstacao.get(nome).map((id) => porChave.get(`${nome}|${id}`)))
+    .filter((grupo) => grupo.length > 1);
+
+  const sequencias = Object.keys(LINHAS).map((id) =>
+    pontos.filter((p) => p.linha === id).sort((a, b) => a.indice - b.indice)
+  );
+
+  function posicao(nome, linha) { return porChave.get(`${nome}|${linha}`); }
+
+  /* ---------- Desenho ---------- */
+
+  const conteudo = svgEl('g', { id: 'conteudoMapa' });
+  [el.camadaLinhas, el.camadaLigacoes, el.camadaRota, el.camadaEstacoes].forEach((camada) => {
+    conteudo.appendChild(camada);
+  });
+  el.svg.appendChild(conteudo);
+
+  const estadoLinhas = window.Conta.estadoLinhas();
+  const avisos = Object.keys(LINHAS).filter((id) => estadoLinhas[id] === 'interrompida');
+
+  Object.entries(LINHAS).forEach(([id, linha]) => {
+    const seq = sequencias.find((s) => s[0].linha === id);
+    const pontosStr = seq.map((p) => `${p.x.toFixed(1)},${p.y}`).join(' ');
+    el.camadaLinhas.appendChild(svgEl('polyline', {
+      points: pontosStr, class: 'linha-fundo', stroke: linha.cor
+    }));
+    if (avisos.includes(id)) {
+      el.camadaLinhas.appendChild(svgEl('polyline', {
+        points: pontosStr, class: 'linha-interrompida'
+      }));
+    } else {
+      el.camadaLinhas.appendChild(svgEl('polyline', {
+        points: pontosStr, class: 'linha-tracado', stroke: linha.cor
+      }));
+    }
+  });
+
+  correspondencias.forEach((grupo) => {
+    const primeiro = grupo[0];
+    grupo.slice(1).forEach((outro) => {
+      el.camadaLigacoes.appendChild(svgEl('line', {
+        x1: primeiro.x.toFixed(1), y1: primeiro.y,
+        x2: outro.x.toFixed(1), y2: outro.y,
+        class: 'ligacao-correspondencia'
+      }));
+    });
+  });
+
+  const gruposEstacao = new Map();
+  todasEstacoes.forEach((nome) => {
+    const grupo = svgEl('g', {
+      class: `estacao${linhasPorEstacao.get(nome).length > 1 ? ' interchange' : ''}`,
+      'data-estacao': nome
+    });
+    const pontosDaEstacao = linhasPorEstacao.get(nome).map((id) => posicao(nome, id));
+    pontosDaEstacao.forEach((p) => {
+      grupo.appendChild(svgEl('circle', {
+        cx: p.x.toFixed(1), cy: p.y, r: pontosDaEstacao.length > 1 ? 6 : 5,
+        class: 'ponto', stroke: LINHAS[p.linha].cor
+      }));
+    });
+    const mediaX = pontosDaEstacao.reduce((s, p) => s + p.x, 0) / pontosDaEstacao.length;
+    const primeiroPonto = pontosDaEstacao.reduce((a, b) => a.y < b.y ? a : b);
+    const desvio = primeiroPonto.indice % 2 ? 26 : -8;
+    const yRotulo = primeiroPonto.y + desvio;
+    // Rotação e ancoragem à direita evitam sobreposição de nomes longos.
+    const rotulo = svgEl('text', {
+      x: (mediaX - 9).toFixed(1), y: yRotulo, class: 'rotulo',
+      'text-anchor': 'end', transform: `rotate(-32 ${(mediaX - 9).toFixed(1)} ${yRotulo})`
+    }, nome);
+    grupo.appendChild(rotulo);
+
+    grupo.addEventListener('click', () => selecionar(nome));
+    el.camadaEstacoes.appendChild(grupo);
+    gruposEstacao.set(nome, grupo);
+  });
+
+  if (avisos.length) {
+    el.avisoLinhas.textContent = `Interrompida${avisos.length > 1 ? 's' : ''}: ${avisos.map((id) => LINHAS[id].nome).join(', ')}`;
+    el.avisoLinhas.style.color = '#b00020';
+  }
+
+  /* ---------- Zoom e pan ---------- */
+
+  let zoom = 1;
+  let panX = 0;
+  let panY = 0;
+
+  function aplicarTransform() {
+    conteudo.setAttribute('transform', `translate(${panX.toFixed(2)} ${panY.toFixed(2)}) scale(${zoom.toFixed(3)})`);
+  }
+
+  function mudarZoom(fator, centroX = 600, centroY = 280) {
+    const novo = Math.max(0.5, Math.min(2.5, zoom * fator));
+    if (novo === zoom) return;
+    panX = centroX - (centroX - panX) * (novo / zoom);
+    panY = centroY - (centroY - panY) * (novo / zoom);
+    zoom = novo;
+    aplicarTransform();
+  }
+
+  document.querySelectorAll('[data-zoom]').forEach((botao) => {
+    botao.addEventListener('click', () => {
+      const acao = botao.dataset.zoom;
+      if (acao === 'in') mudarZoom(1.25);
+      else if (acao === 'out') mudarZoom(0.8);
+      else { zoom = 1; panX = 0; panY = 0; aplicarTransform(); }
+    });
+  });
+
+  let arrasto = null;
+  el.envolucao.addEventListener('pointerdown', (evento) => {
+    arrasto = { x: evento.clientX, y: evento.clientY, panX, panY, moveu: false };
+    el.envolucao.classList.add('arrastando');
+    if (el.envolucao.setPointerCapture) el.envolucao.setPointerCapture(evento.pointerId);
+  });
+  el.envolucao.addEventListener('pointermove', (evento) => {
+    if (!arrasto) return;
+    const dx = evento.clientX - arrasto.x;
+    const dy = evento.clientY - arrasto.y;
+    if (Math.abs(dx) + Math.abs(dy) > 3) arrasto.moveu = true;
+    if (!arrasto.moveu) return;
+    panX = arrasto.panX + dx;
+    panY = arrasto.panY + dy;
+    aplicarTransform();
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => {
+    el.envolucao.addEventListener(ev, () => {
+      arrasto = null;
+      el.envolucao.classList.remove('arrastando');
+    });
+  });
+  el.envolucao.addEventListener('wheel', (evento) => {
+    evento.preventDefault();
+    const rect = el.envolucao.getBoundingClientRect();
+    const cx = (evento.clientX - rect.left) / rect.width * 1200;
+    const cy = (evento.clientY - rect.top) / rect.height * 560;
+    mudarZoom(evento.deltaY < 0 ? 1.1 : 0.9, cx, cy);
+  }, { passive: false });
+
+  /* ---------- Seleção e itinerário ---------- */
+
+  let selecionada = null;
+  let origem = null;
+  let destino = null;
+
+  function mostrarSelecao() {
+    el.selecao.replaceChildren();
+    const linhas = [
+      ['Origem', origem],
+      ['Destino', destino]
+    ];
+    linhas.forEach(([rotulo, valor]) => {
+      const linha = document.createElement('div');
+      if (valor) {
+        const negrito = document.createElement('b');
+        negrito.textContent = `${rotulo}: `;
+        linha.append(negrito, document.createTextNode(valor));
+      } else {
+        linha.textContent = `${rotulo}: —`;
+      }
+      el.selecao.appendChild(linha);
+    });
+    const tempo = document.createElement('div');
+    tempo.textContent = 'Clica numa estação e define origem/destino.';
+    el.selecao.appendChild(tempo);
+  }
+
+  function limparRota() {
+    el.camadaRota.replaceChildren();
+    gruposEstacao.forEach((grupo) => grupo.classList.remove('na-rota'));
+  }
+
+  function selecionar(nome) {
+    if (selecionada && gruposEstacao.has(selecionada)) {
+      gruposEstacao.get(selecionada).classList.remove('selecionada');
+    }
+    selecionada = nome;
+    const grupo = gruposEstacao.get(nome);
+    if (grupo) grupo.classList.add('selecionada');
+    el.nomeEstacao.textContent = nome;
+
+    el.linhasEstacao.replaceChildren();
+    linhasPorEstacao.get(nome).forEach((id) => {
+      const etiqueta = document.createElement('span');
+      etiqueta.className = 'etiqueta-linha';
+      etiqueta.style.background = LINHAS[id].cor;
+      etiqueta.textContent = LINHAS[id].nome;
+      el.linhasEstacao.appendChild(etiqueta);
+    });
+    limparErro();
+  }
+
+  function limparErro() {
+    if (el.erro) el.erro.hidden = true;
+  }
+
+  function mostrarErro(mensagem) {
+    el.erro.textContent = mensagem;
+    el.erro.hidden = false;
+    el.resultadoInfo.replaceChildren();
+    limparRota();
+  }
+
+  function desenharRota(rota) {
+    el.camadaRota.replaceChildren();
+    const segmentos = rota.passos.filter((p) => p.tipo === 'segmento');
+    if (!segmentos.length) return;
+    const coords = [];
+    const primeiro = posicao(rota.origem, segmentos[0].linha);
+    if (primeiro) coords.push(`${primeiro.x.toFixed(1)},${primeiro.y}`);
+    segmentos.forEach((p) => {
+      const dest = posicao(p.para, p.linha);
+      if (dest) coords.push(`${dest.x.toFixed(1)},${dest.y}`);
+    });
+    if (coords.length > 1) {
+      el.camadaRota.appendChild(svgEl('polyline', { points: coords.join(' '), class: 'rota-ativa' }));
+    }
+    rota.cadeia.forEach((nome) => {
+      const g = gruposEstacao.get(nome);
+      if (g) g.classList.add('na-rota');
+    });
+  }
+
+  function mostrarResultado(rota) {
+    el.resultadoInfo.replaceChildren();
+    const titulo = document.createElement('div');
+    const negrito = document.createElement('b');
+    negrito.textContent = `${rota.origem} → ${rota.destino}`;
+    titulo.append(negrito, document.createElement('br'), document.createTextNode(
+      `Duração: ${Math.round(rota.total)} min · Transbordos: ${rota.transbordos}`
+    ));
+    el.resultadoInfo.appendChild(titulo);
+    rota.pernadas.forEach((pernada) => {
+      const bloco = document.createElement('div');
+      bloco.className = 'linha-resultado';
+      bloco.style.setProperty('--cor-linha', LINHAS[pernada.linha].cor);
+      bloco.textContent = `Linha ${LINHAS[pernada.linha].nome}: ${pernada.de} → ${pernada.ate}`;
+      el.resultadoInfo.appendChild(bloco);
+    });
+    el.abrirSimulador.href = `metro.html?origem=${encodeURIComponent(rota.origem)}` +
+      `&destino=${encodeURIComponent(rota.destino)}` +
+      `&hora=${encodeURIComponent(String(rota.minutoSaida))}`;
+    el.abrirSimulador.hidden = false;
+  }
+
+  function calcular() {
+    if (!origem || !destino) return mostrarErro('Define a origem e o destino no mapa.');
+    if (origem === destino) return mostrarErro('A origem e o destino têm de ser estações diferentes.');
+    const minuto = Number(el.hora.value);
+    const data = el.data.value;
+    if (!el.hora.value || !data) return mostrarErro('Preenche a hora e a data.');
+    const rota = melhorRota(origem, destino, minuto, data, linhasAtivas());
+    if (!rota) return mostrarErro('Não foi possível calcular este itinerário com as linhas disponíveis.');
+    limparErro();
+    desenharRota(rota);
+    mostrarResultado(rota);
+  }
+
+  el.definirOrigem.addEventListener('click', () => {
+    if (!selecionada) return mostrarErro('Seleciona primeiro uma estação no mapa.');
+    origem = selecionada;
+    limparErro();
+    mostrarSelecao();
+  });
+  el.definirDestino.addEventListener('click', () => {
+    if (!selecionada) return mostrarErro('Seleciona primeiro uma estação no mapa.');
+    destino = selecionada;
+    limparErro();
+    mostrarSelecao();
+  });
+  el.calcular.addEventListener('click', calcular);
+
+  /* ---------- Inicialização ---------- */
+
+  function popularHoraEData() {
+    const horarios = [];
+    for (let m = 0; m <= 60; m += 15) horarios.push(m);
+    for (let m = 6 * 60; m < 24 * 60; m += 15) horarios.push(m);
+    horarios.forEach((m) => {
+      const opcao = document.createElement('option');
+      opcao.value = String(m);
+      opcao.textContent = formatarHora(m);
+      el.hora.appendChild(opcao);
+    });
+    el.hora.value = String(8 * 60 + 30);
+    const agora = new Date();
+    const local = new Date(agora.getTime() - agora.getTimezoneOffset() * 60000);
+    el.data.value = local.toISOString().slice(0, 10);
+  }
+
+  const parametros = new URLSearchParams(location.search);
+  if (parametros.has('origem') && todasEstacoes.includes(parametros.get('origem'))) origem = parametros.get('origem');
+  if (parametros.has('destino') && todasEstacoes.includes(parametros.get('destino'))) destino = parametros.get('destino');
+
+  popularHoraEData();
+  if (parametros.has('hora') && el.hora.querySelector(`option[value="${parametros.get('hora')}"]`)) {
+    el.hora.value = parametros.get('hora');
+  }
+  mostrarSelecao();
+  aplicarTransform();
+
+  if (origem && destino) {
+    selecionar(origem);
+    calcular();
+  }
+})();
+
+
+/* ============================================================
+   Página de conta — ligação dos formulários ao módulo Conta.
+   ============================================================ */
+(() => {
+  'use strict';
+
+  const $ = (id) => document.getElementById(id);
+  const el = {
+    sessaoAtual: $('sessaoAtual'), formularios: $('formularios'),
+    formEntrar: $('formEntrar'), entrarEmail: $('entrarEmail'), entrarSenha: $('entrarSenha'),
+    msgEntrar: $('mensagemEntrar'),
+    formRegistar: $('formRegistar'), regNome: $('regNome'), regEmail: $('regEmail'),
+    regSenha: $('regSenha'), regCodigo: $('regCodigo'), campoCodigo: $('campoCodigo'),
+    msgRegistar: $('mensagemRegistar')
+  };
+
+  function mensagem(no, texto, sucesso) {
+    no.textContent = texto;
+    no.hidden = false;
+    no.classList.toggle('sucesso', !!sucesso);
+    no.classList.toggle('erro', !sucesso);
+  }
+
+  function destino(utilizador) {
+    return utilizador.tipo === 'admin' ? 'admin' : 'simulador';
+  }
+
+  function atualizarContaUI() {
+    const atual = window.Conta.atual();
+    el.sessaoAtual.hidden = !atual;
+    el.formularios.hidden = !!atual;
+  }
+
+  el.formEntrar.addEventListener('submit', (evento) => {
+    evento.preventDefault();
+    const resultado = window.Conta.entrar(el.entrarEmail.value, el.entrarSenha.value);
+    if (!resultado.ok) return mensagem(el.msgEntrar, resultado.erro, false);
+    mensagem(el.msgEntrar, 'Sessão iniciada. A redirecionar...', true);
+    atualizarContaUI();
+    window.mostrarPagina(destino(resultado.utilizador));
+  });
+
+  document.querySelectorAll('input[name="tipo"]').forEach((radio) => {
+    radio.addEventListener('change', () => {
+      el.campoCodigo.hidden = radio.value !== 'admin' || !radio.checked;
+      if (el.campoCodigo.hidden) el.regCodigo.value = '';
+    });
+  });
+
+  el.formRegistar.addEventListener('submit', (evento) => {
+    evento.preventDefault();
+    const tipo = document.querySelector('input[name="tipo"]:checked');
+    const resultado = window.Conta.registar({
+      nome: el.regNome.value,
+      email: el.regEmail.value,
+      senha: el.regSenha.value,
+      tipo: tipo ? tipo.value : 'cliente',
+      codigo: el.regCodigo.value
+    });
+    if (!resultado.ok) return mensagem(el.msgRegistar, resultado.erro, false);
+    window.Conta.entrar(el.regEmail.value, el.regSenha.value);
+    mensagem(el.msgRegistar, 'Conta criada. A redirecionar...', true);
+    atualizarContaUI();
+    window.mostrarPagina(destino(resultado.utilizador));
+  });
+
+  window.atualizarContaUI = atualizarContaUI;
+  atualizarContaUI();
+})();
+
+
+/* ============================================================
+   Painel de administração — utilizadores e estado das linhas.
+   ============================================================ */
+(() => {
+  'use strict';
+
+  const $ = (id) => document.getElementById(id);
+  const { LINHAS } = window.MetroLisboa;
+  const el = {
+    painel: $('painel'), negado: $('acessoNegado'), lista: $('listaUtilizadores'),
+    contagem: $('contagemUtilizadores'), linhas: $('listaLinhas'), mensagem: $('mensagemAdmin')
+  };
+
+  function mensagem(texto, sucesso = true) {
+    el.mensagem.textContent = texto;
+    el.mensagem.hidden = false;
+    el.mensagem.classList.toggle('sucesso', sucesso);
+    el.mensagem.classList.toggle('erro', !sucesso);
+  }
+
+  function criarCelula(texto) {
+    const td = document.createElement('td');
+    td.textContent = texto;
+    return td;
+  }
+
+  function desenharUtilizadores() {
+    const utilizadores = window.Conta.listar();
+    const sessao = window.Conta.atual();
+    el.lista.replaceChildren();
+    el.contagem.textContent = `${utilizadores.length} conta${utilizadores.length === 1 ? '' : 's'}`;
+
+    utilizadores.forEach((utilizador) => {
+      const tr = document.createElement('tr');
+      tr.appendChild(criarCelula(utilizador.nome));
+      tr.appendChild(criarCelula(utilizador.email));
+
+      const tdTipo = document.createElement('td');
+      const etiqueta = document.createElement('span');
+      etiqueta.className = `etiqueta-tipo${utilizador.tipo === 'admin' ? ' admin' : ''}`;
+      etiqueta.textContent = utilizador.tipo === 'admin' ? 'Admin' : 'Cliente';
+      tdTipo.appendChild(etiqueta);
+      tr.appendChild(tdTipo);
+
+      const tdAcoes = document.createElement('td');
+      const select = document.createElement('select');
+      select.setAttribute('aria-label', `Tipo de ${utilizador.nome}`);
+      ['cliente', 'admin'].forEach((tipo) => {
+        const opcao = document.createElement('option');
+        opcao.value = tipo;
+        opcao.textContent = tipo === 'admin' ? 'Admin' : 'Cliente';
+        select.appendChild(opcao);
+      });
+      select.value = utilizador.tipo;
+      select.addEventListener('change', () => {
+        if (!window.Conta.alterarTipo(utilizador.id, select.value)) {
+          mensagem('Não foi possível alterar o tipo.', false);
+          return;
+        }
+        mensagem(`Tipo de ${utilizador.nome} alterado para ${select.value}.`);
+        if (sessao && sessao.id === utilizador.id) location.reload();
+        else desenharUtilizadores();
+      });
+
+      const botao = document.createElement('button');
+      botao.type = 'button';
+      botao.className = 'botao';
+      botao.textContent = 'Remover';
+      botao.addEventListener('click', () => {
+        if (!window.Conta.remover(utilizador.id)) {
+          mensagem('Não podes remover a tua própria conta.', false);
+          return;
+        }
+        mensagem(`Conta de ${utilizador.nome} removida.`);
+        desenharUtilizadores();
+      });
+
+      tdAcoes.append(select, document.createTextNode(' '), botao);
+      tr.appendChild(tdAcoes);
+      el.lista.appendChild(tr);
+    });
+  }
+
+  function desenharLinhas() {
+    const estado = window.Conta.estadoLinhas();
+    el.linhas.replaceChildren();
+    Object.entries(LINHAS).forEach(([id, linha]) => {
+      const bloco = document.createElement('div');
+      bloco.className = 'linha-estado';
+      const bola = document.createElement('i');
+      bola.style.background = linha.cor;
+      bloco.appendChild(bola);
+
+      const nome = document.createElement('span');
+      nome.textContent = linha.nome;
+      bloco.appendChild(nome);
+
+      const select = document.createElement('select');
+      select.setAttribute('aria-label', `Estado da linha ${linha.nome}`);
+      [['operacional', 'Operacional'], ['interrompida', 'Interrompida']].forEach(([valor, rotulo]) => {
+        const opcao = document.createElement('option');
+        opcao.value = valor;
+        opcao.textContent = rotulo;
+        select.appendChild(opcao);
+      });
+      select.value = estado[id] || 'operacional';
+      select.addEventListener('change', () => {
+        if (!window.Conta.definirLinha(id, select.value)) {
+          mensagem('Não foi possível alterar o estado da linha.', false);
+          return;
+        }
+        mensagem(`Linha ${linha.nome}: ${select.value}.`);
+      });
+      bloco.appendChild(select);
+      el.linhas.appendChild(bloco);
+    });
+  }
+
+  function desenharPainel() {
+    if (!window.Conta.eAdmin()) {
+      el.negado.hidden = false;
+      return;
+    }
+    el.negado.hidden = true;
+    desenharUtilizadores();
+    desenharLinhas();
+  }
+
+  window.renderizarAdmin = desenharPainel;
+  desenharPainel();
+})();
+
+
+
+/* ============================================================
+   Separadores da versão num único ficheiro
+   ============================================================ */
+(() => {
+  'use strict';
+  const seccoes = {
+    simulador: document.getElementById('pagina-simulador'),
+    mapa: document.getElementById('pagina-mapa'),
+    conta: document.getElementById('pagina-conta'),
+    admin: document.getElementById('pagina-admin')
+  };
+  const botoes = document.querySelectorAll('[data-pagina]');
+
+  window.mostrarPagina = (nome) => {
+    const alvo = nome === 'admin' && !window.Conta.eAdmin() ? 'conta' : (seccoes[nome] ? nome : 'simulador');
+    Object.entries(seccoes).forEach(([chave, seccao]) => { seccao.hidden = chave !== alvo; });
+    botoes.forEach((botao) => botao.classList.toggle('ativo', botao.dataset.pagina === alvo));
+    if (alvo === 'conta' && typeof window.atualizarContaUI === 'function') window.atualizarContaUI();
+    if (alvo === 'admin' && typeof window.renderizarAdmin === 'function') window.renderizarAdmin();
+    if (window.scrollTo) window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  botoes.forEach((botao) => {
+    botao.addEventListener('click', () => window.mostrarPagina(botao.dataset.pagina));
+  });
+
+  const parametros = new URLSearchParams(location.search);
+  window.mostrarPagina(parametros.has('origem') || parametros.has('destino') ? 'simulador' : 'simulador');
+})();
+  </script>
+</body>
+</html>
